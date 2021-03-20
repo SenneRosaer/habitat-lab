@@ -188,5 +188,5 @@ def save_config(exp_config, config):
 if __name__ == "__main__":
     # Setup weights-and-biases monitoring.
     wandb.init()
-
+    print("?")
     main()

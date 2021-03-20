@@ -295,7 +295,7 @@ class HabitatSim(habitat_sim.Simulator, Simulator):
 
             sim_sensor_cfg = habitat_sim.CameraSensorSpec()
             # TODO Handle configs for custom VisualSensors that might need
-            # their own ignore_keys. Maybe with special key / checking
+            # their own2 ignore_keys. Maybe with special key / checking
             # SensorType
             overwrite_config(
                 config_from=sensor.config,

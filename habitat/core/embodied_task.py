@@ -24,7 +24,7 @@ class Action:
     For example for navigation task action classes will be:
     ``MoveForwardAction, TurnLeftAction, TurnRightAction``. The action can
     use ``Task`` members to pass a state to another action, as well as keep
-    own state and reset when new episode starts.
+    own2 state and reset when new episode starts.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

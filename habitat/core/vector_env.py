@@ -121,7 +121,7 @@ class _WriteWrapper:
 
 class VectorEnv:
     r"""Vectorized environment which creates multiple processes where each
-    process runs its own environment. Main class for parallelization of
+    process runs its own2 environment. Main class for parallelization of
     training and evaluation.
 
 

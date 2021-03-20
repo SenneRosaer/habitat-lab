@@ -112,7 +112,7 @@ def images_to_video(
         output_dir: The folder to put the video in.
         video_name: The name for the video.
         fps: Frames per second for the video. Not all values work with FFMPEG,
-            use at your own risk.
+            use at your own2 risk.
         quality: Default is 5. Uses variable bit rate. Highest quality is 10,
             lowest is 0.  Set to None to prevent variable bitrate flags to
             FFMPEG so you can manually specify them using output_params

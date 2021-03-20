@@ -61,6 +61,8 @@ def execute_exp(config: Config, run_type: str) -> None:
     if run_type == "train":
         trainer.train()
     elif run_type == "eval":
+        wandb.init()
+        print("?")
         trainer.eval()
 
 
@@ -187,6 +189,4 @@ def save_config(exp_config, config):
 
 if __name__ == "__main__":
     # Setup weights-and-biases monitoring.
-    wandb.init()
-    print("?")
     main()

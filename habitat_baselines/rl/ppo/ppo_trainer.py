@@ -53,6 +53,7 @@ from habitat_baselines.utils.common import (
 )
 from habitat_baselines.utils.env_utils import construct_envs
 
+import wandb
 
 @baseline_registry.register_trainer(name="ddppo")
 @baseline_registry.register_trainer(name="ppo")
@@ -1074,5 +1075,11 @@ class PPOTrainer(BaseRLTrainer):
         metrics = {k: v for k, v in aggregated_stats.items() if k != "reward"}
         if len(metrics) > 0:
             writer.add_scalars("eval_metrics", metrics, step_id)
+
+        # Wandb logging.
+        log = {k: v for k, v in aggregated_stats.items()}
+        log["step"] = step_id
+        log["checkpoint"] = checkpoint_index
+        wandb.log(log)
 
         self.envs.close()

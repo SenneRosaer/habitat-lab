@@ -76,6 +76,7 @@ def get_replica_config(config):
     # Determine the number of scenes in this dataset.
     dataset = make_dataset(config.TASK_CONFIG.DATASET.TYPE)
     scenes = config.TASK_CONFIG.DATASET.CONTENT_SCENES
+    print(scenes)
     if "*" in config.TASK_CONFIG.DATASET.CONTENT_SCENES:
         scenes = dataset.get_scenes_to_load(config.TASK_CONFIG.DATASET)
 

@@ -115,11 +115,16 @@ class BaseTrainer:
                 prev_ckpt_ind = -1
                 while True:
                     current_ckpt = None
-                    while current_ckpt is None:
+                    count = 0
+                    while current_ckpt is None and count < 20:
                         current_ckpt = poll_checkpoint_folder(
                             self.config.EVAL_CKPT_PATH_DIR, prev_ckpt_ind
                         )
-                        time.sleep(2)  # sleep for 2 secs before polling again
+                        time.sleep(2)
+                        count += 1# sleep for 2 secs before polling again
+                        print(count)
+                    if count >= 20:
+                        break
                     logger.info(f"=======current_ckpt: {current_ckpt}=======")
                     prev_ckpt_ind += 1
                     self._eval_checkpoint(
@@ -127,7 +132,7 @@ class BaseTrainer:
                         writer=writer,
                         checkpoint_index=prev_ckpt_ind,
                     )
-
+                    print("???")
     def _eval_checkpoint(
         self,
         checkpoint_path: str,

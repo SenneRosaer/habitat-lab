@@ -1077,6 +1077,7 @@ class PPOTrainer(BaseRLTrainer):
             writer.add_scalars("eval_metrics", metrics, step_id)
 
         # Wandb logging.
+        print("?????????,")
         log = {k: v for k, v in aggregated_stats.items()}
         log["step"] = step_id
         log["checkpoint"] = checkpoint_index

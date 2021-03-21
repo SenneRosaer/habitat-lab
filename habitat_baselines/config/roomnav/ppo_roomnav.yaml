@@ -18,7 +18,7 @@ CHECKPOINT_FOLDER: "checkpoints"
 TOTAL_NUM_STEPS: -1.0
 LOG_INTERVAL: 10
 NUM_CHECKPOINTS: 10
-NUM_UPDATES: 200
+NUM_UPDATES: 10000
 FORCE_TORCH_SINGLE_THREADED: True
 
 
@@ -71,7 +71,7 @@ RL:
     reset_critic: True
 
     # Model parameters
-    backbone: resnet50
+    backbone: resnet18
     rnn_type: LSTM
     num_recurrent_layers: 2
 

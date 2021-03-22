@@ -630,7 +630,10 @@ class PPOTrainer(BaseRLTrainer):
             losses,
             self.num_steps_done,
         )
-
+        log = {"reward": deltas["reward"] / deltas["count"]}
+        log.update(metrics)
+        log.update({k: 1 for 1, k in zip(losses, ["loss_value", "loss_policy"])})
+        wandb.log(log)
         # log stats
         if self.num_updates_done % self.config.LOG_INTERVAL == 0:
             logger.info(

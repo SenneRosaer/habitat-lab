@@ -556,11 +556,11 @@ class RoomNavMetric(Measure):
         self._previous_position = self._sim.get_agent_state().position.tolist()
 
         self._start_end_episode_distance = self._sim.geodesic_distance(episode.start_position, episode.goals[0].position)
-        # total = 0.01
-        # while self._start_end_episode_distance == float('-inf'):
-        #     self._start_end_episode_distance = self._sim.geodesic_distance(
-        #         episode.start_position-total, episode.goals[0].target_point)
-        #     total += 0.01
+        total = 0.01
+        while self._start_end_episode_distance == float('-inf'):
+            self._start_end_episode_distance = self._sim.geodesic_distance(
+                episode.start_position-total, episode.goals[0].target_point)
+            total += 0.01
         self._previous = self._start_end_episode_distance
         self._agent_episode_distance = 0.0
         self._metric = None
@@ -604,10 +604,10 @@ class RoomNavMetric(Measure):
 
 
         self._metric = self._sim.geodesic_distance(current_position, episode.goals[0].position)
-        # if self._metric == float('inf'):
-        #     self._metric = self._previous
-        # self._previous = self._metric
-        # print(self._metric)
+        if self._metric == float('inf'):
+            self._metric = self._previous
+        self._previous = self._metric
+        print(self._metric)
 
 @registry.register_measure
 class Success(Measure):

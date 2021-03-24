@@ -79,14 +79,14 @@ def get_replica_config(config):
     if "*" in config.TASK_CONFIG.DATASET.CONTENT_SCENES:
         scenes = dataset.get_scenes_to_load(config.TASK_CONFIG.DATASET)
 
-    if len(scenes) >= config.NUM_PROCESSES:
+    if len(scenes) >= config.NUM_ENVIRONMENTS:
         # Fallback to default handling in habitat.
         return config
 
-    assert config.NUM_PROCESSES % len(scenes) == 0, "Number of processes must be divisible by number of scenes."
+    assert config.NUM_ENVIRONMENTS % len(scenes) == 0, "Number of processes must be divisible by number of scenes."
 
     # Determine number of replicas.
-    num_replicas = config.NUM_PROCESSES // len(scenes)
+    num_replicas = config.NUM_ENVIRONMENTS // len(scenes)
 
     # Update config.
     config.defrost()

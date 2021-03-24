@@ -630,7 +630,7 @@ class PPOTrainer(BaseRLTrainer):
             losses,
             self.num_steps_done,
         )
-        log = {"reward": deltas["reward"] / deltas["count"]}
+        log = {"reward": deltas["reward"] / deltas["count"], 'update':self.num_updates_done, 'frames': self.num_steps_done, "fps": self.num_steps_done/((time.time()-self.t_start)+prev_time)}
         log.update(metrics)
         log.update({k: l for l, k in zip(losses, ["loss_value", "loss_policy"])})
         wandb.log(log)

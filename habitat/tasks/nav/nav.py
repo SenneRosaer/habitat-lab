@@ -554,17 +554,10 @@ class RoomNavMetric(Measure):
 
     def reset_metric(self,episode, task, *args: Any, **kwargs: Any) -> None:
         self._previous_position = self._sim.get_agent_state().position.tolist()
-
-        self._start_end_episode_distance = self._sim.geodesic_distance(episode.start_position, episode.goals[0].position)
-        total = 0.01
-        while self._start_end_episode_distance == float('-inf'):
-            self._start_end_episode_distance = self._sim.geodesic_distance(
-                episode.start_position-total, episode.goals[0].target_point)
-            total += 0.01
+        self._start_end_episode_distance = self.shortest_path_to_room(episode.start_position, episode.goals[0].room_bounds)
         self._previous = self._start_end_episode_distance
         self._agent_episode_distance = 0.0
         self._metric = None
-        self._last_update = 0
 
     def _euclidean_distance(self, position_a, position_b):
         return np.linalg.norm(np.array(position_b) - np.array(position_a), ord=2)
@@ -577,9 +570,6 @@ class RoomNavMetric(Measure):
             distance = self._previous
         self._previous = distance
         return distance
-
-    def shortest_path_to_room2(self, start_position, room):
-        point = [start_position[0], start_position[2]]
 
     def update_metric(self,episode, task, *args: Any, **kwargs: Any) -> None:
         success = 0
@@ -599,15 +589,8 @@ class RoomNavMetric(Measure):
         # if success == 1 and hasattr(task, "is_stop_called") and task.is_stop_called:
         #     self._metric = success * (self._start_end_episode_distance / max(self._start_end_episode_distance, self._agent_episode_distance))
         #
-        # if self._last_update == 0:
-        #     self._metric = self.shortest_path_to_room(current_position,episode.goals[0].room_bounds)
+        self._metric = self.shortest_path_to_room(current_position,episode.goals[0].room_bounds)
 
-
-        self._metric = self._sim.geodesic_distance(current_position, episode.goals[0].position)
-        if self._metric == float('inf'):
-            self._metric = self._previous
-        self._previous = self._metric
-        print(self._metric)
 
 @registry.register_measure
 class Success(Measure):

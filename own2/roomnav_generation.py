@@ -1,5 +1,5 @@
 ISLAND_RADIUS_LIMIT = 1.5
-from habitat.tasks.nav.nav import NavigationEpisode, RoomGoal
+from habitat.tasks.nav.nav import NavigationEpisode, NavigationGoal
 from numpy import float64
 
 from typing import Dict, Generator, List, Optional, Sequence, Tuple, Union
@@ -8,7 +8,7 @@ from shapely.geometry import Polygon, Point
 
 from shapely.ops import nearest_points
 from shapely.geometry import Polygon, Point
-
+import math
 
 def _ratio_sample_rate(ratio: float, ratio_threshold: float) -> float:
     r"""Sampling function for aggressive filtering of straight-line
@@ -56,12 +56,10 @@ def _create_episode(
     scene_id: str,
     start_position: List[float],
     start_rotation: List[Union[int, float64]],
-    target_room: str,
-    target_point: List[float],
-    room_points: List[float],
+    target_point,
     info: Optional[Dict[str, float]] = None,
 ) -> Optional[NavigationEpisode]:
-    goals = [RoomGoal(position=target_point,room_id=target_room, room_bounds=room_points)]
+    goals = [NavigationGoal(position=tp,radius=0.3) for tp in target_point]
     return NavigationEpisode(
         episode_id=str(episode_id),
         goals=goals,
@@ -124,20 +122,37 @@ def generate_roomnav_episode(
                     angle = np.random.uniform(0, 2 * np.pi)
                     source_rotation = [0, np.sin(angle / 2), 0, np.cos(angle / 2)]
 
-                    point = nearest_points(
-                        Point([source_position[0], source_position[1]]),Polygon(room_points))[0]
-                    print(point)
-                    new_point = [point.x, 0.2, point.y]
+                    poly = poly.buffer(-0.3)
+                    points = []
+                    for i in range(-1, len(poly.exterior.coords.xy[0]) - 1):
+                        p1 = [poly.exterior.coords.xy[0][i],
+                              poly.exterior.coords.xy[1][i]]
+                        p2 = [poly.exterior.coords.xy[0][i + 1],
+                              poly.exterior.coords.xy[1][i + 1]]
+                        if p1 != p2:
+                            v = [p2[0] - p1[0], p2[1] - p1[1]]
+                            v2 = math.sqrt(
+                                math.pow(v[0], 2) + math.pow(v[1], 2))
+                            v3 = [v[0] / v2, v[1] / v2]
+
+                            distances = []
+                            d = 0
+                            while True:
+                                d += 0.3
+                                if d > v2:
+                                    break
+                                distances.append(d)
+                            for i in distances:
+                                vt = [v3[0] * i, v3[1] * i]
+                                points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
 
                     episode = _create_episode(
                         episode_id=episode_count,
                         scene_id="beacon/v0/beacon-7/beacon-7.glb",
                         start_position=source_position,
                         start_rotation=source_rotation,
-                        target_room=room_id,
-                        target_point=new_point,
-                        room_points=room_points,
-                        info={"geodesic_distance": dist},
+                        target_point=points,
+                        info={"geodesic_distance": dist}
                     )
 
                     episode_count += 1

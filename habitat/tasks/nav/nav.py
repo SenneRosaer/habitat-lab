@@ -85,7 +85,6 @@ class RoomGoal(NavigationGoal):
     room_name: Optional[str] = None
     room_bounds: List[float] = attr.ib(default=None, validator=not_none_validator)
 
-
 @attr.s(auto_attribs=True, kw_only=True)
 class NavigationEpisode(Episode):
     r"""Class for episode specification that includes initial position and

@@ -2,7 +2,7 @@
 
 BASE_TASK_CONFIG_PATH: "configs/tasks/roomnav.yaml"
 TRAINER_NAME: "ddppo"
-ENV_NAME: "RoomNavRLEnv"
+ENV_NAME: "NavRLEnv"
 SIMULATOR_GPU_ID: 0
 TORCH_GPU_ID: 0
 # Can be uncommented to generate videos.
@@ -18,7 +18,7 @@ CHECKPOINT_FOLDER: "checkpoints"
 TOTAL_NUM_STEPS: -1.0
 LOG_INTERVAL: 10
 NUM_CHECKPOINTS: 10
-NUM_UPDATES: 10000
+NUM_UPDATES: 500
 FORCE_TORCH_SINGLE_THREADED: True
 
 

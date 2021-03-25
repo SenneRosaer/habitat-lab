@@ -207,11 +207,11 @@ class PointNavResNetNet(Net):
         self.prev_action_embedding = nn.Embedding(action_space.n + 1, 32)
         self._n_prev_action = 32
         rnn_input_size = self._n_prev_action
-
         if (
             IntegratedPointGoalGPSAndCompassSensor.cls_uuid
             in observation_space.spaces
         ):
+
             n_input_goal = (
                 observation_space.spaces[
                     IntegratedPointGoalGPSAndCompassSensor.cls_uuid
@@ -343,6 +343,7 @@ class PointNavResNetNet(Net):
         masks,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         x = []
+
         if not self.is_blind:
             if "visual_features" in observations:
                 visual_feats = observations["visual_features"]
@@ -420,7 +421,7 @@ class PointNavResNetNet(Net):
                 -1,
             )
             x.append(
-                self.compass_embedding(compass_observations.squeeze(dim=1))
+                self.compass_embedding(compass_observations.squeeze(dim=1).float())
             )
 
         if EpisodicGPSSensor.cls_uuid in observations:

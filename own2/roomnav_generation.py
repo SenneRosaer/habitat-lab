@@ -1,5 +1,5 @@
 ISLAND_RADIUS_LIMIT = 1.5
-from habitat.tasks.nav.nav import NavigationEpisode, NavigationGoal
+from habitat.tasks.nav.nav import NavigationEpisode, NavigationGoal, RoomGoal
 from numpy import float64
 
 from typing import Dict, Generator, List, Optional, Sequence, Tuple, Union
@@ -57,9 +57,12 @@ def _create_episode(
     start_position: List[float],
     start_rotation: List[Union[int, float64]],
     target_point,
+    target_points,
+    room_bounds,
+    room_id,
     info: Optional[Dict[str, float]] = None,
 ) -> Optional[NavigationEpisode]:
-    goals = [NavigationGoal(position=tp,radius=0.3) for tp in target_point]
+    goals = [RoomGoal(position=target_point,room_id=room_id, room_bound_points=target_points, room_bounds=room_bounds)]
     return NavigationEpisode(
         episode_id=str(episode_id),
         goals=goals,
@@ -145,13 +148,20 @@ def generate_roomnav_episode(
                             for i in distances:
                                 vt = [v3[0] * i, v3[1] * i]
                                 points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
+                    point = nearest_points(
+                        Point([source_position[0], source_position[1]]),
+                        poly)[0]
+                    new_point = [point.x, 0.2, point.y]
 
                     episode = _create_episode(
                         episode_id=episode_count,
                         scene_id="beacon/v0/beacon-7/beacon-7.glb",
                         start_position=source_position,
                         start_rotation=source_rotation,
-                        target_point=points,
+                        target_point=new_point,
+                        target_points=points,
+                        room_id=room_id,
+                        room_bounds=room_points,
                         info={"geodesic_distance": dist}
                     )
 

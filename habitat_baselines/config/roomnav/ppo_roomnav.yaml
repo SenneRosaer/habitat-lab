@@ -2,7 +2,7 @@
 
 BASE_TASK_CONFIG_PATH: "configs/tasks/roomnav.yaml"
 TRAINER_NAME: "ddppo"
-ENV_NAME: "NavRLEnv"
+ENV_NAME: "RoomNavRLEnv"
 SIMULATOR_GPU_ID: 0
 TORCH_GPU_ID: 0
 # Can be uncommented to generate videos.
@@ -71,7 +71,7 @@ RL:
     reset_critic: True
 
     # Model parameters
-    backbone: resnet18
+    backbone: resnet50
     rnn_type: LSTM
     num_recurrent_layers: 2
 

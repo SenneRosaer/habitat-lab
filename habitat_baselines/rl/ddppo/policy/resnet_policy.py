@@ -22,6 +22,7 @@ from habitat.tasks.nav.nav import (
     IntegratedPointGoalGPSAndCompassSensor,
     PointGoalSensor,
     ProximitySensor,
+    RoomGoalSensor
 )
 from habitat.tasks.nav.object_nav_task import ObjectGoalSensor
 from habitat_baselines.common.baseline_registry import baseline_registry
@@ -246,7 +247,12 @@ class PointNavResNetNet(Net):
             ].shape[0]
             self.pointgoal_embedding = nn.Linear(input_pointgoal_dim, 32)
             rnn_input_size += 32
-
+        if RoomGoalSensor.cls_uuid in observation_space.spaces:
+            input_pointgoal_dim = observation_space.spaces[
+                RoomGoalSensor.cls_uuid
+            ].shape[0]
+            self.roomgoal_embedding = nn.Linear(input_pointgoal_dim, 32)
+            rnn_input_size += 32
         if HeadingSensor.cls_uuid in observation_space.spaces:
             input_heading_dim = (
                 observation_space.spaces[HeadingSensor.cls_uuid].shape[0] + 1
@@ -392,6 +398,10 @@ class PointNavResNetNet(Net):
         if PointGoalSensor.cls_uuid in observations:
             goal_observations = observations[PointGoalSensor.cls_uuid]
             x.append(self.pointgoal_embedding(goal_observations))
+
+        if RoomGoalSensor.cls_uuid in observations:
+            sensor_observations = observations[RoomGoalSensor.cls_uuid]
+            x.append(self.roomgoal_embedding(sensor_observations))
 
         if ProximitySensor.cls_uuid in observations:
             sensor_observations = observations[ProximitySensor.cls_uuid]

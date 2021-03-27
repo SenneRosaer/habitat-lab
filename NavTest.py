@@ -56,5 +56,5 @@ if __name__ == "__main__":
     trainer_init = baseline_registry.get_trainer(config.TRAINER_NAME)
     trainer = trainer_init(config)
     trainer.train()
-    #trainer.eval()
+    trainer.eval()
 

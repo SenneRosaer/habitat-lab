@@ -401,7 +401,7 @@ class PointNavResNetNet(Net):
 
         if RoomGoalSensor.cls_uuid in observations:
             sensor_observations = observations[RoomGoalSensor.cls_uuid]
-            x.append(self.roomgoal_embedding(sensor_observations))
+            x.append(self.roomgoal_embedding(sensor_observations.float()))
 
         if ProximitySensor.cls_uuid in observations:
             sensor_observations = observations[ProximitySensor.cls_uuid]

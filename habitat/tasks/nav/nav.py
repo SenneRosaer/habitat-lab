@@ -311,7 +311,7 @@ class RoomGoalSensor(Sensor):
             low=np.finfo(np.float32).min,
             high=np.finfo(np.float32).max,
             shape=(1,),
-            dtype=np.float32,
+            dtype=np.int64,
         )
 
     def get_observation(
@@ -322,7 +322,7 @@ class RoomGoalSensor(Sensor):
         **kwargs: Any,
     ):
 
-        return np.array([episode.goals[0].room_id])
+        return np.array([episode.goals[0].room_id-1], dtype=np.int64)
 
 @registry.register_sensor(name="PointGoalWithGPSCompassSensor")
 class IntegratedPointGoalGPSAndCompassSensor(PointGoalSensor):

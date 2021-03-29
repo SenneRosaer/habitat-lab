@@ -248,10 +248,14 @@ class PointNavResNetNet(Net):
             self.pointgoal_embedding = nn.Linear(input_pointgoal_dim, 32)
             rnn_input_size += 32
         if RoomGoalSensor.cls_uuid in observation_space.spaces:
-            input_pointgoal_dim = observation_space.spaces[
-                RoomGoalSensor.cls_uuid
-            ].shape[0]
-            self.roomgoal_embedding = nn.Linear(input_pointgoal_dim, 32)
+            self._n_room_categories = (46)
+            self.roomgoal_embedding = nn.Embedding(
+                self._n_room_categories, 32
+            )
+            # input_pointgoal_dim = observation_space.spaces[
+            #     RoomGoalSensor.cls_uuid
+            # ].shape[0]
+            # self.roomgoal_embedding = nn.Linear(input_pointgoal_dim, 32)
             rnn_input_size += 32
         if HeadingSensor.cls_uuid in observation_space.spaces:
             input_heading_dim = (
@@ -400,8 +404,8 @@ class PointNavResNetNet(Net):
             x.append(self.pointgoal_embedding(goal_observations))
 
         if RoomGoalSensor.cls_uuid in observations:
-            sensor_observations = observations[RoomGoalSensor.cls_uuid]
-            x.append(self.roomgoal_embedding(sensor_observations.float()))
+            sensor_observations = observations[RoomGoalSensor.cls_uuid].long()
+            x.append(self.roomgoal_embedding(sensor_observations).squeeze(dim=1))
 
         if ProximitySensor.cls_uuid in observations:
             sensor_observations = observations[ProximitySensor.cls_uuid]

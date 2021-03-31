@@ -1028,10 +1028,20 @@ class PPOTrainer(BaseRLTrainer):
 
                 # episode continues
                 elif len(self.config.VIDEO_OPTION) > 0:
-                    # TODO move normalization / channel changing out of the policy and undo it here
                     frame = observations_to_image(
                         {k: v[i] for k, v in batch.items()}, infos[i]
                     )
+                    # # TODO move normalization / channel changing out of the policy and undo it here
+                    # if 'roomnavmetric' not in infos[i]:
+                    #     frame = observations_to_image(
+                    #         {k: v[i] for k, v in batch.items()}, infos[i]
+                    #     )
+                    # else:
+                    #     tmp = infos[i]
+                    #     tmp['room'] = current_episodes[0].goals[0].room_bounds
+                    #     frame = observations_to_image(
+                    #         {k: v[i] for k, v in batch.items()}, tmp
+                    #     )
                     rgb_frames[i].append(frame)
 
             not_done_masks = not_done_masks.to(device=self.device)

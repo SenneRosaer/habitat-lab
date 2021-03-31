@@ -15,7 +15,8 @@ import tqdm
 from habitat.core.logging import logger
 from habitat.core.utils import try_cv2_import
 from habitat.utils.visualizations import maps
-
+import math
+from shapely.geometry import Polygon
 cv2 = try_cv2_import()
 
 
@@ -204,6 +205,41 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
         top_down_map = maps.colorize_draw_agent_and_fit_to_height(
             info["top_down_map"], egocentric_view.shape[0]
         )
+        frame = np.concatenate((egocentric_view, top_down_map), axis=1)
+
+    if 'room' in info:
+        lo = [-8.416683, -4.635123, -11.14608]
+        hi = [55.16621, 6.341098, 12.464998]
+        length = (abs(lo[0]) + abs(hi[0]))/len(top_down_map[0])
+
+        points = []
+        poly = Polygon(info['room'])
+        for i in range(-1, len(poly.exterior.coords.xy[0]) - 1):
+            p1 = [poly.exterior.coords.xy[0][i],
+                  poly.exterior.coords.xy[1][i]]
+            p2 = [poly.exterior.coords.xy[0][i + 1],
+                  poly.exterior.coords.xy[1][i + 1]]
+            if p1 != p2:
+                v = [p2[0] - p1[0], p2[1] - p1[1]]
+                v2 = math.sqrt(
+                    math.pow(v[0], 2) + math.pow(v[1], 2))
+                v3 = [v[0] / v2, v[1] / v2]
+
+                distances = []
+                d = 0
+                while True:
+                    d += 0.05
+                    if d > v2:
+                        break
+                    distances.append(d)
+                for i in distances:
+                    vt = [v3[0] * i, v3[1] * i]
+                    points.append([p1[0] + vt[0], p1[1] + vt[1]])
+        for point in points:
+            t1 = (math.floor((point[0]-lo[0])/length), math.floor((-(-point[1]-hi[2]))/length))
+            for i in range(t1[1]-1, t1[1]+1):
+                for j in range(t1[0]-1, t1[0]+1):
+                    top_down_map[i][j] = np.array([255,127,80])
         frame = np.concatenate((egocentric_view, top_down_map), axis=1)
     return frame
 

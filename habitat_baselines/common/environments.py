@@ -129,7 +129,7 @@ class RoomNavRLEnv(habitat.RLEnv):
         #
         # if reward == float('-inf'):
         #     reward = 0
-        current_measure = self._env.get_metrics()["roomnavmetric"]
+        current_measure = self._env.get_metrics()[self._core_env_config.TASK.METRIC_UUID]
 
         reward += self._previous_measure - current_measure
         self._previous_measure = current_measure

@@ -533,10 +533,10 @@ class ProximitySensor(Sensor):
         )
 
 @registry.register_measure
-class RoomNavMetric(Measure):
+class RoomNavMetricPoint(Measure):
     """The measure calculates a distance towards the goal."""
 
-    cls_uuid: str = "roomnavmetric"
+    cls_uuid: str = "roomnavmetricpoint"
 
     def __init__(
         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
@@ -575,64 +575,64 @@ class RoomNavMetric(Measure):
             self._previous_position = current_position
             self._metric = distance_to_target
 
-# @registry.register_measure
-# class RoomNavMetric(Measure):
-#     cls_uuid: str = "roomnavmetric"
-#
-#     def __init__(
-#         self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
-#     ):
-#         self._sim = sim
-#         self._config = config
-#
-#
-#         self._previous_position = None
-#         self._start_end_episode_distance = None
-#         self._agent_episode_distance = None
-#         self._episode_view_points = None
-#         super().__init__()
-#
-#     def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
-#         return self.cls_uuid
-#
-#     def reset_metric(self,episode, task, *args: Any, **kwargs: Any) -> None:
-#         self._previous_position = self._sim.get_agent_state().position.tolist()
-#         self._start_end_episode_distance = self.shortest_path_to_room(episode.start_position, episode.goals[0].room_bounds)
-#         self._previous = self._start_end_episode_distance
-#         self._agent_episode_distance = 0.0
-#         self._metric = None
-#
-#     def _euclidean_distance(self, position_a, position_b):
-#         return np.linalg.norm(np.array(position_b) - np.array(position_a), ord=2)
-#
-#     def shortest_path_to_room(self, start_position, room):
-#         point = nearest_points(Point([start_position[0], start_position[2]]),Polygon(room))[1]
-#         new_point = [point.x, start_position[1] ,point.y]
-#         distance = self._sim.geodesic_distance(start_position, new_point)
-#         if distance == float('inf'):
-#             distance = self._previous
-#         self._previous = distance
-#         return distance
-#
-#     def update_metric(self,episode, task, *args: Any, **kwargs: Any) -> None:
-#         success = 0
-#         current_position = self._sim.get_agent_state().position.tolist()
-#         # poly = Polygon(episode.goals[0].room_bounds)
-#         # point = Point([current_position[0], current_position[2]])
-#         # if point.within(poly):
-#         #     success = 1
-#         #
-#         # # distance_to_target = self._sim.geodesic_distance(current_position,self._goal)
-#         # # ep_soft_success = max(
-#         # #     0, (1 - (distance_to_target / self._start_end_episode_distance))
-#         # # )
-#         # self._agent_episode_distance += self._euclidean_distance(current_position, self._previous_position)
-#         # self._previous_position = current_position
-#         #
-#         # if success == 1 and hasattr(task, "is_stop_called") and task.is_stop_called:
-#         #     self._metric = success * (self._start_end_episode_distance / max(self._start_end_episode_distance, self._agent_episode_distance))
-#         #
-#         self._metric = self.shortest_path_to_room(current_position,episode.goals[0].room_bounds)
+@registry.register_measure
+class RoomNavMetric(Measure):
+    cls_uuid: str = "roomnavmetric"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        self._sim = sim
+        self._config = config
+
+
+        self._previous_position = None
+        self._start_end_episode_distance = None
+        self._agent_episode_distance = None
+        self._episode_view_points = None
+        super().__init__()
+
+    def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
+        return self.cls_uuid
+
+    def reset_metric(self,episode, task, *args: Any, **kwargs: Any) -> None:
+        self._previous_position = self._sim.get_agent_state().position.tolist()
+        self._start_end_episode_distance = self.shortest_path_to_room(episode.start_position, episode.goals[0].room_bounds)
+        self._previous = self._start_end_episode_distance
+        self._agent_episode_distance = 0.0
+        self._metric = None
+
+    def _euclidean_distance(self, position_a, position_b):
+        return np.linalg.norm(np.array(position_b) - np.array(position_a), ord=2)
+
+    def shortest_path_to_room(self, start_position, room):
+        point = nearest_points(Point([start_position[0], start_position[2]]),Polygon(room))[1]
+        new_point = [point.x, start_position[1] ,point.y]
+        distance = self._sim.geodesic_distance(start_position, new_point)
+        if distance == float('inf'):
+            distance = self._previous
+        self._previous = distance
+        return distance
+
+    def update_metric(self,episode, task, *args: Any, **kwargs: Any) -> None:
+        success = 0
+        current_position = self._sim.get_agent_state().position.tolist()
+        # poly = Polygon(episode.goals[0].room_bounds)
+        # point = Point([current_position[0], current_position[2]])
+        # if point.within(poly):
+        #     success = 1
+        #
+        # # distance_to_target = self._sim.geodesic_distance(current_position,self._goal)
+        # # ep_soft_success = max(
+        # #     0, (1 - (distance_to_target / self._start_end_episode_distance))
+        # # )
+        # self._agent_episode_distance += self._euclidean_distance(current_position, self._previous_position)
+        # self._previous_position = current_position
+        #
+        # if success == 1 and hasattr(task, "is_stop_called") and task.is_stop_called:
+        #     self._metric = success * (self._start_end_episode_distance / max(self._start_end_episode_distance, self._agent_episode_distance))
+        #
+        self._metric = self.shortest_path_to_room(current_position,episode.goals[0].room_bounds)
 
 
 @registry.register_measure

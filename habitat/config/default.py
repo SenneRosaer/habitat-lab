@@ -89,6 +89,11 @@ _C.TASK.ROOMGOAL_SENSOR.TYPE = "RoomGoalSensor"
 _C.TASK.ROOMNAVMETRIC = CN()
 _C.TASK.ROOMNAVMETRIC.TYPE = "RoomNavMetric"
 # -----------------------------------------------------------------------------
+# ROOMNAVMETRICPOINT MEASUREMENT
+# -----------------------------------------------------------------------------
+_C.TASK.ROOMNAVMETRICPOINT = CN()
+_C.TASK.ROOMNAVMETRICPOINT.TYPE = "RoomNavMetricPoint"
+# -----------------------------------------------------------------------------
 # POINTGOAL SENSOR
 # -----------------------------------------------------------------------------
 _C.TASK.POINTGOAL_SENSOR = CN()

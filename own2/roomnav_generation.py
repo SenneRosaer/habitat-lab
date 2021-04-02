@@ -125,13 +125,13 @@ def generate_roomnav_episode(
                     angle = np.random.uniform(0, 2 * np.pi)
                     source_rotation = [0, np.sin(angle / 2), 0, np.cos(angle / 2)]
 
-                    poly = poly.buffer(-0.3)
+                    poly_n = poly.buffer(-0.3)
                     points = []
                     for i in range(-1, len(poly.exterior.coords.xy[0]) - 1):
-                        p1 = [poly.exterior.coords.xy[0][i],
-                              poly.exterior.coords.xy[1][i]]
-                        p2 = [poly.exterior.coords.xy[0][i + 1],
-                              poly.exterior.coords.xy[1][i + 1]]
+                        p1 = [poly_n.exterior.coords.xy[0][i],
+                              poly_n.exterior.coords.xy[1][i]]
+                        p2 = [poly_n.exterior.coords.xy[0][i + 1],
+                              poly_n.exterior.coords.xy[1][i + 1]]
                         if p1 != p2:
                             v = [p2[0] - p1[0], p2[1] - p1[1]]
                             v2 = math.sqrt(
@@ -148,9 +148,7 @@ def generate_roomnav_episode(
                             for i in distances:
                                 vt = [v3[0] * i, v3[1] * i]
                                 points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
-                    point = nearest_points(
-                        Point([source_position[0], source_position[1]]),
-                        poly)[0]
+                    point = poly.centroid
                     new_point = [point.x, 0.2, point.y]
 
                     episode = _create_episode(

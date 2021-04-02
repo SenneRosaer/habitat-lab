@@ -1028,20 +1028,30 @@ class PPOTrainer(BaseRLTrainer):
 
                 # episode continues
                 elif len(self.config.VIDEO_OPTION) > 0:
-                    frame = observations_to_image(
-                        {k: v[i] for k, v in batch.items()}, infos[i]
-                    )
-                    # # TODO move normalization / channel changing out of the policy and undo it here
-                    # if 'roomnavmetric' not in infos[i]:
-                    #     frame = observations_to_image(
-                    #         {k: v[i] for k, v in batch.items()}, infos[i]
-                    #     )
-                    # else:
-                    #     tmp = infos[i]
-                    #     tmp['room'] = current_episodes[0].goals[0].room_bounds
-                    #     frame = observations_to_image(
-                    #         {k: v[i] for k, v in batch.items()}, tmp
-                    #     )
+                    # frame = observations_to_image(
+                    #     {k: v[i] for k, v in batch.items()}, infos[i]
+                    # )
+                    # TODO move normalization / channel changing out of the policy and undo it here
+                    if 'POINTGOAL_WITH_GPS_COMPASS_SENSOR' in self.config.TASK_CONFIG.TASK.SENSORS:
+                        infos[i]['point'] = current_episodes[0].goals[0].position
+                    if 'roomnavmetricpoint' in infos[i]:
+                        tmp = infos[i]
+                        tmp['roompoints'] = current_episodes[0].goals[0].room_bounds
+                        frame = observations_to_image(
+                            {k: v[i] for k, v in batch.items()}, tmp
+                        )
+                    elif 'roomnavmetric' in infos[i]:
+                        tmp = infos[i]
+                        tmp['room'] = current_episodes[0].goals[
+                            0].room_bounds
+                        frame = observations_to_image(
+                            {k: v[i] for k, v in batch.items()}, tmp
+                        )
+                    else:
+
+                        frame = observations_to_image(
+                            {k: v[i] for k, v in batch.items()}, infos[i]
+                        )
                     rgb_frames[i].append(frame)
 
             not_done_masks = not_done_masks.to(device=self.device)

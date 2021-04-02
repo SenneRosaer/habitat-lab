@@ -634,6 +634,44 @@ class RoomNavMetric(Measure):
         #
         self._metric = self.shortest_path_to_room(current_position,episode.goals[0].room_bounds)
 
+@registry.register_measure
+class RoomSuccess(Measure):
+    r"""Whether or not the agent succeeded at its task
+
+    This measure depends on DistanceToGoal measure.
+    """
+
+    cls_uuid: str = "roomsuccess"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        self._sim = sim
+        self._config = config
+
+        super().__init__()
+
+    def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
+        return self.cls_uuid
+
+    def reset_metric(self, episode, task, *args: Any, **kwargs: Any):
+        self.update_metric(episode=episode, task=task, *args, **kwargs)  # type: ignore
+
+    def update_metric(
+        self, episode, task: EmbodiedTask, *args: Any, **kwargs: Any
+    ):
+        point = self._sim.get_agent_state().position.tolist()
+        point = [point[0], point[2]]
+        point = Point(point)
+        poly = Polygon(episode.goals[0].room_bounds)
+        if (
+            hasattr(task, "is_stop_called")
+            and task.is_stop_called  # type: ignore
+            and point.within(poly)
+        ):
+            self._metric = 1.0
+        else:
+            self._metric = 0.0
 
 @registry.register_measure
 class Success(Measure):

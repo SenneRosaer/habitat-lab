@@ -633,7 +633,7 @@ class PPOTrainer(BaseRLTrainer):
         log = {"reward": deltas["reward"] / deltas["count"], 'update':self.num_updates_done, 'frames': self.num_steps_done, "fps": self.num_steps_done/((time.time()-self.t_start)+prev_time)}
         log.update(metrics)
         log.update({k: l for l, k in zip(losses, ["loss_value", "loss_policy"])})
-        wandb.log(log)
+        #wandb.log(log)
         # log stats
         if self.num_updates_done % self.config.LOG_INTERVAL == 0:
             logger.info(
@@ -1035,23 +1035,15 @@ class PPOTrainer(BaseRLTrainer):
                     if 'POINTGOAL_WITH_GPS_COMPASS_SENSOR' in self.config.TASK_CONFIG.TASK.SENSORS:
                         infos[i]['point'] = current_episodes[0].goals[0].position
                     if 'roomnavmetricpoint' in infos[i]:
-                        tmp = infos[i]
-                        tmp['roompoints'] = current_episodes[0].goals[0].room_bounds
-                        frame = observations_to_image(
-                            {k: v[i] for k, v in batch.items()}, tmp
-                        )
-                    elif 'roomnavmetric' in infos[i]:
-                        tmp = infos[i]
-                        tmp['room'] = current_episodes[0].goals[
-                            0].room_bounds
-                        frame = observations_to_image(
-                            {k: v[i] for k, v in batch.items()}, tmp
-                        )
-                    else:
+                        infos[i]['roompoints'] = current_episodes[0].goals[0].room_bound_points
 
-                        frame = observations_to_image(
-                            {k: v[i] for k, v in batch.items()}, infos[i]
-                        )
+                    if 'roomnavmetric' in infos[i] or 'roomnavmetricpoint' in infos[i]:
+                        infos[i]['room'] = current_episodes[0].goals[
+                            0].room_bounds
+
+                    frame = observations_to_image(
+                        {k: v[i] for k, v in batch.items()}, infos[i]
+                    )
                     rgb_frames[i].append(frame)
 
             not_done_masks = not_done_masks.to(device=self.device)

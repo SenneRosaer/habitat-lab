@@ -6,15 +6,11 @@ TORCH_GPU_ID: 0
 VIDEO_OPTION: []
 TENSORBOARD_DIR: ""
 EVAL_CKPT_PATH_DIR: "data/test_checkpoints/ddppo/pointnav/ckpt.0.pth"
-NUM_ENVIRONMENTS: 1
+NUM_PROCESSES: 1
 CHECKPOINT_FOLDER: "data/test_checkpoints/ddppo/pointnav/"
 NUM_UPDATES: 2
-NUM_CHECKPOINTS: 2
 LOG_INTERVAL: 100
-TEST_EPISODE_COUNT: 2
-# Force PyTorch to be single threaded as
-# this improves performance considerably
-FORCE_TORCH_SINGLE_THREADED: True
+CHECKPOINT_INTERVAL: 1
 
 RL:
   SUCCESS_REWARD: 2.5
@@ -60,8 +56,6 @@ RL:
     reset_critic: True
 
     # Model parameters
-    backbone: resnet18
+    backbone: resnet50
     rnn_type: LSTM
     num_recurrent_layers: 2
-
-    force_distributed: True

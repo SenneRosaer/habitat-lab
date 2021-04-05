@@ -240,7 +240,7 @@ class Dataset(Generic[T]):
             than the others. This is especially useful for splitting over
             validation/test datasets in order to make sure that all episodes
             are copied but none are duplicated.
-        :return: a list of new datasets, each with their own2 subset of
+        :return: a list of new datasets, each with their own subset of
             episodes.
 
         All splits will have the same number of episodes, but no episodes will

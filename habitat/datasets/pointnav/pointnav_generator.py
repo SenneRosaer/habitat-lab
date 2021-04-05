@@ -9,7 +9,16 @@ considered  as a target or source location. Used to filter isolated points
 that aren't part of a floor.
 """
 
-from typing import Dict, Generator, List, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from numpy import float64
@@ -22,10 +31,8 @@ try:
     from habitat_sim.errors import GreedyFollowerError
 except ImportError:
     GreedyFollower = BaseException
-try:
+if TYPE_CHECKING:
     from habitat.sims.habitat_simulator.habitat_simulator import HabitatSim
-except ImportError:
-    habitat_sim = BaseException
 ISLAND_RADIUS_LIMIT = 1.5
 
 
@@ -72,7 +79,7 @@ def is_compatible_episode(
 
 
 def _create_episode(
-    episode_id: Union[int, str],
+    episode_id: int,
     scene_id: str,
     start_position: List[float],
     start_rotation: List[Union[int, float64]],
@@ -153,8 +160,6 @@ def generate_pointnav_episode(
                 far_dist=furthest_dist_limit,
                 geodesic_to_euclid_ratio=geodesic_to_euclid_min_ratio,
             )
-            if is_compatible:
-                break
         if is_compatible:
             angle = np.random.uniform(0, 2 * np.pi)
             source_rotation = [0, np.sin(angle / 2), 0, np.cos(angle / 2)]

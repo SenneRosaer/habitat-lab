@@ -28,7 +28,7 @@ def powerset(iterable):
 
 
 def run_main_subproc(args):
-    # This test needs to be done in its own2 process as there is a potentially for
+    # This test needs to be done in its own process as there is a potentially for
     # an OpenGL context clash otherwise
     mp_ctx = multiprocessing.get_context("spawn")
     proc = mp_ctx.Process(target=run_main, args=args)

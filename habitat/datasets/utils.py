@@ -10,7 +10,7 @@
 import re
 import typing
 from collections import Counter
-from typing import Iterable, List, Union
+from typing import TYPE_CHECKING, Iterable, List, Union
 
 from numpy import float64
 
@@ -20,10 +20,9 @@ from habitat.sims.habitat_simulator.actions import HabitatSimActions
 from habitat.tasks.nav.shortest_path_follower import ShortestPathFollower
 from habitat.utils.geometry_utils import quaternion_to_list
 
-try:
+if TYPE_CHECKING:
     from habitat.sims.habitat_simulator.habitat_simulator import HabitatSim
-except ImportError:
-    pass
+
 
 SENTENCE_SPLIT_REGEX = re.compile(r"([^\w-]+)")
 

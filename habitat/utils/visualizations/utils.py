@@ -17,6 +17,7 @@ from habitat.core.utils import try_cv2_import
 from habitat.utils.visualizations import maps
 import math
 from shapely.geometry import Polygon
+
 cv2 = try_cv2_import()
 
 
@@ -113,7 +114,7 @@ def images_to_video(
         output_dir: The folder to put the video in.
         video_name: The name for the video.
         fps: Frames per second for the video. Not all values work with FFMPEG,
-            use at your own2 risk.
+            use at your own risk.
         quality: Default is 5. Uses variable bit rate. Highest quality is 10,
             lowest is 0.  Set to None to prevent variable bitrate flags to
             FFMPEG so you can manually specify them using output_params
@@ -206,8 +207,6 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
             info["top_down_map"], egocentric_view.shape[0]
         )
         frame = np.concatenate((egocentric_view, top_down_map), axis=1)
-
-
     if 'room' in info:
         lo = [-8.416683, -4.635123, -11.14608]
         hi = [55.16621, 6.341098, 12.464998]
@@ -262,6 +261,7 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
             for j in range(t1[0] - 1, t1[0] + 1):
                 top_down_map[i][j] = np.array([255, 0, 0])
         frame = np.concatenate((egocentric_view, top_down_map), axis=1)
+
     return frame
 
 

@@ -60,10 +60,7 @@ class PPO(nn.Module):
         raise NotImplementedError
 
     def get_advantages(self, rollouts: RolloutStorage) -> Tensor:
-        advantages = (
-            rollouts.buffers["returns"][:-1]
-            - rollouts.buffers["value_preds"][:-1]
-        )
+        advantages = rollouts.returns[:-1] - rollouts.value_preds[:-1]
         if not self.use_normalized_advantage:
             return advantages
 
@@ -82,46 +79,59 @@ class PPO(nn.Module):
                 advantages, self.num_mini_batch
             )
 
-            for batch in data_generator:
+            for sample in data_generator:
+                (
+                    obs_batch,
+                    recurrent_hidden_states_batch,
+                    actions_batch,
+                    prev_actions_batch,
+                    value_preds_batch,
+                    return_batch,
+                    masks_batch,
+                    old_action_log_probs_batch,
+                    adv_targ,
+                ) = sample
+
+                # Reshape to do in a single forward pass for all steps
                 (
                     values,
                     action_log_probs,
                     dist_entropy,
                     _,
-                ) = self._evaluate_actions(
-                    batch["observations"],
-                    batch["recurrent_hidden_states"],
-                    batch["prev_actions"],
-                    batch["masks"],
-                    batch["actions"],
+                ) = self.actor_critic.evaluate_actions(
+                    obs_batch,
+                    recurrent_hidden_states_batch,
+                    prev_actions_batch,
+                    masks_batch,
+                    actions_batch,
                 )
 
-                ratio = torch.exp(action_log_probs - batch["action_log_probs"])
-                surr1 = ratio * batch["advantages"]
+                ratio = torch.exp(
+                    action_log_probs - old_action_log_probs_batch
+                )
+                surr1 = ratio * adv_targ
                 surr2 = (
                     torch.clamp(
                         ratio, 1.0 - self.clip_param, 1.0 + self.clip_param
                     )
-                    * batch["advantages"]
+                    * adv_targ
                 )
-                action_loss = -(torch.min(surr1, surr2).mean())
+                action_loss = -torch.min(surr1, surr2).mean()
 
                 if self.use_clipped_value_loss:
-                    value_pred_clipped = batch["value_preds"] + (
-                        values - batch["value_preds"]
+                    value_pred_clipped = value_preds_batch + (
+                        values - value_preds_batch
                     ).clamp(-self.clip_param, self.clip_param)
-                    value_losses = (values - batch["returns"]).pow(2)
+                    value_losses = (values - return_batch).pow(2)
                     value_losses_clipped = (
-                        value_pred_clipped - batch["returns"]
+                        value_pred_clipped - return_batch
                     ).pow(2)
-                    value_loss = 0.5 * torch.max(
-                        value_losses, value_losses_clipped
+                    value_loss = (
+                        0.5
+                        * torch.max(value_losses, value_losses_clipped).mean()
                     )
                 else:
-                    value_loss = 0.5 * (batch["returns"] - values).pow(2)
-
-                value_loss = value_loss.mean()
-                dist_entropy = dist_entropy.mean()
+                    value_loss = 0.5 * (return_batch - values).pow(2).mean()
 
                 self.optimizer.zero_grad()
                 total_loss = (
@@ -151,16 +161,6 @@ class PPO(nn.Module):
         dist_entropy_epoch /= num_updates
 
         return value_loss_epoch, action_loss_epoch, dist_entropy_epoch
-
-    def _evaluate_actions(
-        self, observations, rnn_hidden_states, prev_actions, masks, action
-    ):
-        r"""Internal method that calls Policy.evaluate_actions.  This is used instead of calling
-        that directly so that that call can be overrided with inheritence
-        """
-        return self.actor_critic.evaluate_actions(
-            observations, rnn_hidden_states, prev_actions, masks, action
-        )
 
     def before_backward(self, loss: Tensor) -> None:
         pass

@@ -8,9 +8,10 @@ the user should subclass ``habitat.Agent`` and implement the ``act()``
 and ``reset()`` methods.
 """
 
-from typing import Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, Union
 
-from habitat.core.simulator import Observations
+if TYPE_CHECKING:
+    from habitat.core.simulator import Observations
 
 
 class Agent:

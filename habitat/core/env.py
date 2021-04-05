@@ -6,7 +6,17 @@
 
 import random
 import time
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import gym
 import numba
@@ -42,9 +52,9 @@ class Env:
     _config: Config
     _dataset: Optional[Dataset]
     number_of_episodes: Optional[int]
-    _episodes: List[Episode]
+    _episodes: List[Type[Episode]]
     _current_episode_index: Optional[int]
-    _current_episode: Optional[Episode]
+    _current_episode: Optional[Type[Episode]]
     _episode_iterator: Optional[Iterator]
     _sim: Simulator
     _task: EmbodiedTask
@@ -81,7 +91,7 @@ class Env:
         self._episodes = (
             self._dataset.episodes
             if self._dataset
-            else cast(List[Episode], [])
+            else cast(List[Type[Episode]], [])
         )
         self._current_episode = None
         iter_option_dict = {
@@ -131,12 +141,12 @@ class Env:
         self._episode_over = False
 
     @property
-    def current_episode(self) -> Episode:
+    def current_episode(self) -> Type[Episode]:
         assert self._current_episode is not None
         return self._current_episode
 
     @current_episode.setter
-    def current_episode(self, episode: Episode) -> None:
+    def current_episode(self, episode: Type[Episode]) -> None:
         self._current_episode = episode
 
     @property
@@ -148,11 +158,11 @@ class Env:
         self._episode_iterator = new_iter
 
     @property
-    def episodes(self) -> List[Episode]:
+    def episodes(self) -> List[Type[Episode]]:
         return self._episodes
 
     @episodes.setter
-    def episodes(self, episodes: List[Episode]) -> None:
+    def episodes(self, episodes: List[Type[Episode]]) -> None:
         assert (
             len(episodes) > 0
         ), "Environment doesn't accept empty episodes list."
@@ -344,15 +354,15 @@ class RLEnv(gym.Env):
         return self._env
 
     @property
-    def episodes(self) -> List[Episode]:
+    def episodes(self) -> List[Type[Episode]]:
         return self._env.episodes
 
     @episodes.setter
-    def episodes(self, episodes: List[Episode]) -> None:
+    def episodes(self, episodes: List[Type[Episode]]) -> None:
         self._env.episodes = episodes
 
     @property
-    def current_episode(self) -> Episode:
+    def current_episode(self) -> Type[Episode]:
         return self._env.current_episode
 
     @profiling_wrapper.RangeContext("RLEnv.reset")

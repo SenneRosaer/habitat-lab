@@ -6,7 +6,7 @@
 
 # TODO, lots of typing errors in here
 
-from typing import Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 import attr
 import numpy as np
@@ -37,21 +37,20 @@ from habitat.utils.geometry_utils import (
     quaternion_rotate_vector,
 )
 from habitat.utils.visualizations import fog_of_war, maps
-
 from shapely.geometry import Polygon, Point
 from shapely.ops import nearest_points
 
-try:
+if TYPE_CHECKING:
     from habitat.sims.habitat_simulator.habitat_simulator import HabitatSim
-except ImportError:
-    pass
 cv2 = try_cv2_import()
 
 
 MAP_THICKNESS_SCALAR: int = 128
 
 
-def merge_sim_episode_config(sim_config: Config, episode: Episode) -> Any:
+def merge_sim_episode_config(
+    sim_config: Config, episode: Type[Episode]
+) -> Any:
     sim_config.defrost()
     sim_config.SCENE = episode.scene_id
     sim_config.freeze()
@@ -85,6 +84,7 @@ class RoomGoal(NavigationGoal):
     room_name: Optional[str] = None
     room_bound_points: List[List[float]] = attr.ib(default=None, validator=not_none_validator)
     room_bounds: List[List[float]] = None
+
 
 @attr.s(auto_attribs=True, kw_only=True)
 class NavigationEpisode(Episode):
@@ -213,6 +213,39 @@ class PointGoalSensor(Sensor):
             source_position, rotation_world_start, goal_position
         )
 
+@registry.register_sensor
+class RoomGoalSensor(Sensor):
+    cls_uuid: str = "roomgoal"
+
+    def __init__(
+        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
+    ):
+        self._sim = sim
+        super().__init__(config=config)
+
+    def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
+        return self.cls_uuid
+
+    def _get_sensor_type(self, *args: Any, **kwargs: Any):
+        return SensorTypes.PATH
+
+    def _get_observation_space(self, *args: Any, **kwargs: Any):
+        return spaces.Box(
+            low=np.finfo(np.float32).min,
+            high=np.finfo(np.float32).max,
+            shape=(1,),
+            dtype=np.int64,
+        )
+
+    def get_observation(
+        self,
+        observations,
+        episode: NavigationEpisode,
+        *args: Any,
+        **kwargs: Any,
+    ):
+
+        return np.array([episode.goals[0].room_id-1], dtype=np.int64)
 
 @registry.register_sensor
 class ImageGoalSensor(Sensor):
@@ -290,39 +323,6 @@ class ImageGoalSensor(Sensor):
 
         return self._current_image_goal
 
-@registry.register_sensor
-class RoomGoalSensor(Sensor):
-    cls_uuid: str = "roomgoal"
-
-    def __init__(
-        self, sim: Simulator, config: Config, *args: Any, **kwargs: Any
-    ):
-        self._sim = sim
-        super().__init__(config=config)
-
-    def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
-        return self.cls_uuid
-
-    def _get_sensor_type(self, *args: Any, **kwargs: Any):
-        return SensorTypes.PATH
-
-    def _get_observation_space(self, *args: Any, **kwargs: Any):
-        return spaces.Box(
-            low=np.finfo(np.float32).min,
-            high=np.finfo(np.float32).max,
-            shape=(1,),
-            dtype=np.int64,
-        )
-
-    def get_observation(
-        self,
-        observations,
-        episode: NavigationEpisode,
-        *args: Any,
-        **kwargs: Any,
-    ):
-
-        return np.array([episode.goals[0].room_id-1], dtype=np.int64)
 
 @registry.register_sensor(name="PointGoalWithGPSCompassSensor")
 class IntegratedPointGoalGPSAndCompassSensor(PointGoalSensor):
@@ -531,6 +531,7 @@ class ProximitySensor(Sensor):
             ],
             dtype=np.float32,
         )
+
 
 @registry.register_measure
 class RoomNavMetricPoint(Measure):
@@ -908,28 +909,26 @@ class TopDownMap(Measure):
     def _draw_goals_view_points(self, episode):
         if self._config.DRAW_VIEW_POINTS:
             for goal in episode.goals:
-                if self._is_on_same_floor(goal.position[1]):
-                    try:
-                        if goal.view_points is not None:
-                            for view_point in goal.view_points:
-                                self._draw_point(
-                                    view_point.agent_state.position,
-                                    maps.MAP_VIEW_POINT_INDICATOR,
-                                )
-                    except AttributeError:
-                        pass
+                try:
+                    if goal.view_points is not None:
+                        for view_point in goal.view_points:
+                            self._draw_point(
+                                view_point.agent_state.position,
+                                maps.MAP_VIEW_POINT_INDICATOR,
+                            )
+                except AttributeError:
+                    pass
 
     def _draw_goals_positions(self, episode):
         if self._config.DRAW_GOAL_POSITIONS:
 
             for goal in episode.goals:
-                if self._is_on_same_floor(goal.position[1]):
-                    try:
-                        self._draw_point(
-                            goal.position, maps.MAP_TARGET_POINT_INDICATOR
-                        )
-                    except AttributeError:
-                        pass
+                try:
+                    self._draw_point(
+                        goal.position, maps.MAP_TARGET_POINT_INDICATOR
+                    )
+                except AttributeError:
+                    pass
 
     def _draw_goals_aabb(self, episode):
         if self._config.DRAW_GOAL_AABBS:
@@ -957,7 +956,6 @@ class TopDownMap(Measure):
                             (x_len, -z_len),
                             (-x_len, -z_len),
                         ]
-                        if self._is_on_same_floor(center[1])
                     ]
 
                     map_corners = [
@@ -1000,13 +998,6 @@ class TopDownMap(Measure):
                 maps.MAP_SHORTEST_PATH_COLOR,
                 self.line_thickness,
             )
-
-    def _is_on_same_floor(
-        self, height, ref_floor_height=None, ceiling_height=2.0
-    ):
-        if ref_floor_height is None:
-            ref_floor_height = self._sim.get_agent(0).state.position[1]
-        return ref_floor_height < height < ref_floor_height + ceiling_height
 
     def reset_metric(self, episode, *args: Any, **kwargs: Any):
         self._step_count = 0
@@ -1280,7 +1271,9 @@ class NavigationTask(EmbodiedTask):
     ) -> None:
         super().__init__(config=config, sim=sim, dataset=dataset)
 
-    def overwrite_sim_config(self, sim_config: Any, episode: Episode) -> Any:
+    def overwrite_sim_config(
+        self, sim_config: Any, episode: Type[Episode]
+    ) -> Any:
         return merge_sim_episode_config(sim_config, episode)
 
     def _check_episode_is_active(self, *args: Any, **kwargs: Any) -> bool:

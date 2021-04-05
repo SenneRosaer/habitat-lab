@@ -17,7 +17,6 @@ from habitat import Config, Dataset
 from habitat_baselines.common.baseline_registry import baseline_registry
 from shapely.geometry import Polygon, Point
 
-
 def get_env_class(env_name: str) -> Type[habitat.RLEnv]:
     r"""Return environment class based on name.
 
@@ -84,7 +83,6 @@ class NavRLEnv(habitat.RLEnv):
 
     def get_info(self, observations):
         return self.habitat_env.get_metrics()
-
 
 
 @baseline_registry.register_env(name="RoomNavRLEnv")
@@ -155,4 +153,3 @@ class RoomNavRLEnv(habitat.RLEnv):
 
     def get_info(self, observations):
         return self.habitat_env.get_metrics()
-

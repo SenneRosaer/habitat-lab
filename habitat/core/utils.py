@@ -132,7 +132,7 @@ class DatasetFloatJSONEncoder(json.JSONEncoder):
             else obj.__dict__
         )
 
-    # Overriding method to inject own2 `_repr` function for floats with needed
+    # Overriding method to inject own `_repr` function for floats with needed
     # precision.
     def iterencode(self, o, _one_shot=False):
 

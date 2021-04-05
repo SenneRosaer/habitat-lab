@@ -14,8 +14,7 @@
 export GLOG_minloglevel=2
 export MAGNUM_LOG=quiet
 
-MASTER_ADDR=$(srun --ntasks=1 hostname 2>&1 | tail -n1)
-export MASTER_ADDR
+export MASTER_ADDR=$(srun --ntasks=1 hostname 2>&1 | tail -n1)
 
 set -x
 srun python -u -m habitat_baselines.run \

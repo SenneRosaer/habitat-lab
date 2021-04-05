@@ -13,7 +13,6 @@ from habitat.datasets.vln import _try_register_r2r_vln_dataset
 from habitat.datasets.roomnav import _try_register_areanavdatasetv1
 
 
-
 def make_dataset(id_dataset, **kwargs):
     logger.info("Initializing dataset {}".format(id_dataset))
     _dataset = registry.get_dataset(id_dataset)
@@ -27,4 +26,3 @@ _try_register_mp3d_eqa_dataset()
 _try_register_pointnavdatasetv1()
 _try_register_r2r_vln_dataset()
 _try_register_areanavdatasetv1()
-

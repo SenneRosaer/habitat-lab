@@ -3,7 +3,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 import attr
 import numpy as np
@@ -20,12 +20,10 @@ from habitat.tasks.nav.nav import (
     NavigationTask,
 )
 
-try:
+if TYPE_CHECKING:
     from habitat.datasets.object_nav.object_nav_dataset import (
         ObjectNavDatasetV1,
     )
-except ImportError:
-    pass
 
 
 @attr.s(auto_attribs=True, kw_only=True)

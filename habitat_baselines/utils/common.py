@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import glob
+import numbers
 import os
 import re
 import shutil
@@ -12,7 +13,6 @@ import tarfile
 from collections import defaultdict
 from io import BytesIO
 from typing import (
-    Any,
     DefaultDict,
     Dict,
     Iterable,
@@ -20,25 +20,27 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    cast,
 )
 
-import attr
 import numpy as np
 import torch
 from gym.spaces import Box
+from numpy import ndarray
 from PIL import Image
 from torch import Size, Tensor
 from torch import nn as nn
 
 from habitat import logger
 from habitat.core.dataset import Episode
-from habitat.core.utils import try_cv2_import
 from habitat.utils import profiling_wrapper
 from habitat.utils.visualizations.utils import images_to_video
-from habitat_baselines.common.tensor_dict import DictTree, TensorDict
 from habitat_baselines.common.tensorboard_utils import TensorboardWriter
 
-cv2 = try_cv2_import()
+
+class Flatten(nn.Module):
+    def forward(self, x: Tensor) -> Tensor:
+        return torch.flatten(x, start_dim=1)
 
 
 class CustomFixedCategorical(torch.distributions.Categorical):  # type: ignore
@@ -87,58 +89,21 @@ def linear_decay(epoch: int, total_num_updates: int) -> float:
     return 1 - (epoch / float(total_num_updates))
 
 
-@attr.s(auto_attribs=True, slots=True)
-class ObservationBatchingCache:
-    r"""Helper for batching observations that maintains a cpu-side tensor
-    that is the right size and is pinned to cuda memory
-    """
-    _pool: Dict[Any, torch.Tensor] = attr.Factory(dict)
-
-    def get(
-        self,
-        num_obs: int,
-        sensor_name: str,
-        sensor: torch.Tensor,
-        device: Optional[torch.device] = None,
-    ) -> torch.Tensor:
-        r"""Returns a tensor of the right size to batch num_obs observations together
-
-        If sensor is a cpu-side tensor and device is a cuda device the batched tensor will
-        be pinned to cuda memory.  If sensor is a cuda tensor, the batched tensor will also be
-        a cuda tensor
-        """
-        key = (
-            num_obs,
-            sensor_name,
-            tuple(sensor.size()),
-            sensor.type(),
-            sensor.device.type,
-            sensor.device.index,
-        )
-        if key in self._pool:
-            return self._pool[key]
-
-        cache = torch.empty(
-            num_obs, *sensor.size(), dtype=sensor.dtype, device=sensor.device
-        )
-        if (
-            device is not None
-            and device.type == "cuda"
-            and cache.device.type == "cpu"
-        ):
-            cache = cache.pin_memory()
-
-        self._pool[key] = cache
-        return cache
+def _to_tensor(v: Union[Tensor, ndarray]) -> torch.Tensor:
+    if torch.is_tensor(v):
+        return v
+    elif isinstance(v, np.ndarray):
+        return torch.from_numpy(v)
+    else:
+        return torch.tensor(v, dtype=torch.float)
 
 
 @torch.no_grad()
 @profiling_wrapper.RangeContext("batch_obs")
 def batch_obs(
-    observations: List[DictTree],
+    observations: List[Dict],
     device: Optional[torch.device] = None,
-    cache: Optional[ObservationBatchingCache] = None,
-) -> TensorDict:
+) -> Dict[str, torch.Tensor]:
     r"""Transpose a batch of observation dicts to a dict of batched
     observations.
 
@@ -146,36 +111,22 @@ def batch_obs(
         observations:  list of dicts of observations.
         device: The torch.device to put the resulting tensors on.
             Will not move the tensors if None
-        cache: An ObservationBatchingCache.  This enables faster
-            stacking of observations and cpu-gpu transfer as it
-            maintains a correctly sized tensor for the batched
-            observations that is pinned to cuda memory.
 
     Returns:
         transposed dict of torch.Tensor of observations.
     """
-    batch_t: TensorDict = TensorDict()
-    if cache is None:
-        batch: DefaultDict[str, List] = defaultdict(list)
+    batch: DefaultDict[str, List] = defaultdict(list)
 
-    for i, obs in enumerate(observations):
-        for sensor_name, sensor in obs.items():
-            sensor = torch.as_tensor(sensor)
-            if cache is None:
-                batch[sensor_name].append(sensor)
-            else:
-                if sensor_name not in batch_t:
-                    batch_t[sensor_name] = cache.get(
-                        len(observations), sensor_name, sensor, device
-                    )
+    for obs in observations:
+        for sensor in obs:
+            batch[sensor].append(_to_tensor(obs[sensor]))
 
-                batch_t[sensor_name][i].copy_(sensor)
+    batch_t: Dict[str, torch.Tensor] = {}
 
-    if cache is None:
-        for sensor in batch:
-            batch_t[sensor] = torch.stack(batch[sensor], dim=0)
+    for sensor in batch:
+        batch_t[sensor] = torch.stack(batch[sensor], dim=0).to(device=device)
 
-    return batch_t.map(lambda v: v.to(device, non_blocking=True))
+    return batch_t
 
 
 def get_checkpoint_id(ckpt_path: str) -> Optional[int]:
@@ -222,11 +173,22 @@ def poll_checkpoint_folder(
     return None
 
 
+def get_checkpoint_paths(checkpoint_folder: str):
+    assert os.path.isdir(checkpoint_folder), (
+        f"invalid checkpoint folder " f"path {checkpoint_folder}"
+    )
+    models_paths = list(
+        filter(os.path.isfile, glob.glob(checkpoint_folder + "/*"))
+    )
+    models_paths.sort(key=get_checkpoint_id)
+    return models_paths
+
+
 def generate_video(
     video_option: List[str],
     video_dir: Optional[str],
     images: List[np.ndarray],
-    episode_id: Union[int, str],
+    episode_id: int,
     checkpoint_idx: int,
     metrics: Dict[str, float],
     tb_writer: TensorboardWriter,
@@ -291,6 +253,8 @@ def tensor_to_bgr_images(
     Returns:
         list of images
     """
+    import cv2
+
     images = []
 
     for img_tensor in tensor:
@@ -315,7 +279,7 @@ def image_resize_shortest_edge(
     Returns:
         The resized array as a torch tensor.
     """
-    img = torch.as_tensor(img)
+    img = _to_tensor(img)
     no_batch_dim = len(img.shape) == 3
     if len(img.shape) < 3 or len(img.shape) > 5:
         raise NotImplementedError()
@@ -363,10 +327,10 @@ def center_crop(
     """
     h, w = get_image_height_width(img, channels_last=channels_last)
 
-    if isinstance(size, int):
+    if isinstance(size, numbers.Number):
         size_tuple: Tuple[int, int] = (int(size), int(size))
     else:
-        size_tuple = size
+        size_tuple = cast(Tuple[int, int], size)
     assert len(size_tuple) == 2, "size should be (h,w) you wish to resize to"
     cropy, cropx = size_tuple
 
@@ -379,7 +343,7 @@ def center_crop(
 
 
 def get_image_height_width(
-    img: Union[Box, np.ndarray, torch.Tensor], channels_last: bool = False
+    img: Union[np.ndarray, torch.Tensor], channels_last: bool = False
 ) -> Tuple[int, int]:
     if img.shape is None or len(img.shape) < 3 or len(img.shape) > 5:
         raise NotImplementedError()
@@ -427,7 +391,7 @@ def base_plus_ext(path: str) -> Union[Tuple[str, str], Tuple[None, None]]:
     return match.group(1), match.group(2)
 
 
-def valid_sample(sample: Optional[Any]) -> bool:
+def valid_sample(sample: dict) -> bool:
     """Check whether a webdataset sample is valid.
     sample: sample to be checked
     """

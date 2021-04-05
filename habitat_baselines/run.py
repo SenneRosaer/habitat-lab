@@ -61,32 +61,32 @@ def execute_exp(config: Config, run_type: str) -> None:
     if run_type == "train":
         trainer.train()
     elif run_type == "eval":
-        print("?")
         trainer.eval()
 
 
 def get_replica_config(config):
     r""" Updates the config to replicate scenes.
+
     Updates the config to include replicated scenes to support multiple workers
     when there are insufficient workers.
+
     :param config: Habitat.config
     :return: Habitat.config
     """
     # Determine the number of scenes in this dataset.
     dataset = make_dataset(config.TASK_CONFIG.DATASET.TYPE)
     scenes = config.TASK_CONFIG.DATASET.CONTENT_SCENES
-    print(scenes)
     if "*" in config.TASK_CONFIG.DATASET.CONTENT_SCENES:
         scenes = dataset.get_scenes_to_load(config.TASK_CONFIG.DATASET)
 
-    if len(scenes) >= config.NUM_ENVIRONMENTS:
+    if len(scenes) >= config.NUM_PROCESSES:
         # Fallback to default handling in habitat.
         return config
 
-    assert config.NUM_ENVIRONMENTS % len(scenes) == 0, "Number of processes must be divisible by number of scenes."
+    assert config.NUM_PROCESSES % len(scenes) == 0, "Number of processes must be divisible by number of scenes."
 
     # Determine number of replicas.
-    num_replicas = config.NUM_ENVIRONMENTS // len(scenes)
+    num_replicas = config.NUM_PROCESSES // len(scenes)
 
     # Update config.
     config.defrost()
@@ -98,10 +98,12 @@ def get_replica_config(config):
 
 def run_exp(exp_config: str, run_type: str, opts=None) -> None:
     r"""Runs experiment given mode and config
+
     Args:
         exp_config: path to config file.
         run_type: "train" or "eval.
         opts: list of strings of additional config options.
+
     Returns:
         None.
     """

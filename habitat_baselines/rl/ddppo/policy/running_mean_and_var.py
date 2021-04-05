@@ -8,6 +8,7 @@ import torch
 from torch import Tensor
 from torch import distributed as distrib
 from torch import nn as nn
+from torch.nn import functional as F
 
 
 class RunningMeanAndVar(nn.Module):
@@ -19,36 +20,29 @@ class RunningMeanAndVar(nn.Module):
         self._mean: torch.Tensor = self._mean
         self._var: torch.Tensor = self._var
         self._count: torch.Tensor = self._count
+        self._distributed = distrib.is_initialized()
 
     def forward(self, x: Tensor) -> Tensor:
         if self.training:
-            n = x.size(0)
-            # We will need to do reductions (mean) over the channel dimension,
-            # so moving channels to the first dimension and then flattening
-            # will make those faster.  Further, it makes things more numerically stable
-            # for fp16 since it is done in a single reduction call instead of
-            # multiple
-            x_channels_first = (
-                x.transpose(1, 0).contiguous().view(x.size(1), -1)
-            )
-            new_mean = x_channels_first.mean(-1, keepdim=True)
-            new_count = torch.full_like(self._count, n)
+            new_mean = F.adaptive_avg_pool2d(x, 1).sum(0, keepdim=True)  # type: ignore
+            new_count = torch.full_like(self._count, x.size(0))
 
-            if distrib.is_initialized():
+            if self._distributed:
                 distrib.all_reduce(new_mean)
                 distrib.all_reduce(new_count)
-                new_mean /= distrib.get_world_size()
 
-            new_var = (
-                (x_channels_first - new_mean).pow(2).mean(dim=-1, keepdim=True)
+            new_mean = new_mean / new_count
+
+            new_var = F.adaptive_avg_pool2d((x - new_mean).pow(2), 1).sum(  # type: ignore
+                0, keepdim=True
             )
 
-            if distrib.is_initialized():
+            if self._distributed:
                 distrib.all_reduce(new_var)
-                new_var /= distrib.get_world_size()
 
-            new_mean = new_mean.view(1, -1, 1, 1)
-            new_var = new_var.view(1, -1, 1, 1)
+            # No - 1 on all the variance as the number of pixels
+            # seen over training is simply absurd, so it doesn't matter
+            new_var = new_var / new_count
 
             m_a = self._var * (self._count)
             m_b = new_var * (new_count)
@@ -68,10 +62,7 @@ class RunningMeanAndVar(nn.Module):
 
             self._count += new_count
 
-        inv_stdev = torch.rsqrt(
+        stdev = torch.sqrt(
             torch.max(self._var, torch.full_like(self._var, 1e-2))
         )
-        # This is the same as
-        # (x - self._mean) * inv_stdev but is faster since it can
-        # make use of addcmul and is more numerically stable in fp16
-        return torch.addcmul(-self._mean * inv_stdev, x, inv_stdev)
+        return (x - self._mean) / stdev

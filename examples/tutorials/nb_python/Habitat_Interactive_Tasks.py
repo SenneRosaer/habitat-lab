@@ -253,28 +253,34 @@ def make_cfg(settings):
     sim_cfg = habitat_sim.SimulatorConfiguration()
     sim_cfg.gpu_device_id = 0
     sim_cfg.default_agent_id = settings["default_agent_id"]
-    sim_cfg.scene_id = settings["scene"]
+    sim_cfg.scene.id = settings["scene"]
     sim_cfg.enable_physics = settings["enable_physics"]
     sim_cfg.physics_config_file = settings["physics_config_file"]
 
     # Note: all sensors must have the same resolution
+    sensors = {
+        "rgb": {
+            "sensor_type": habitat_sim.SensorType.COLOR,
+            "resolution": [settings["height"], settings["width"]],
+            "position": [0.0, settings["sensor_height"], 0.0],
+        },
+        "depth": {
+            "sensor_type": habitat_sim.SensorType.DEPTH,
+            "resolution": [settings["height"], settings["width"]],
+            "position": [0.0, settings["sensor_height"], 0.0],
+        },
+    }
+
     sensor_specs = []
+    for sensor_uuid, sensor_params in sensors.items():
+        if settings[sensor_uuid]:
+            sensor_spec = habitat_sim.SensorSpec()
+            sensor_spec.uuid = sensor_uuid
+            sensor_spec.sensor_type = sensor_params["sensor_type"]
+            sensor_spec.resolution = sensor_params["resolution"]
+            sensor_spec.position = sensor_params["position"]
 
-    rgb_sensor_spec = habitat_sim.CameraSensorSpec()
-    rgb_sensor_spec.uuid = "rgb"
-    rgb_sensor_spec.sensor_type = habitat_sim.SensorType.COLOR
-    rgb_sensor_spec.resolution = [settings["height"], settings["width"]]
-    rgb_sensor_spec.position = [0.0, settings["sensor_height"], 0.0]
-    rgb_sensor_spec.sensor_subtype = habitat_sim.SensorSubType.PINHOLE
-    sensor_specs.append(rgb_sensor_spec)
-
-    depth_sensor_spec = habitat_sim.CameraSensorSpec()
-    depth_sensor_spec.uuid = "depth"
-    depth_sensor_spec.sensor_type = habitat_sim.SensorType.DEPTH
-    depth_sensor_spec.resolution = [settings["height"], settings["width"]]
-    depth_sensor_spec.position = [0.0, settings["sensor_height"], 0.0]
-    depth_sensor_spec.sensor_subtype = habitat_sim.SensorSubType.PINHOLE
-    sensor_specs.append(depth_sensor_spec)
+            sensor_specs.append(sensor_spec)
 
     # Here you can specify the amount of displacement in a forward action and the turn angle
     agent_cfg = habitat_sim.agent.AgentConfiguration()
@@ -697,7 +703,12 @@ def raycast(sim, sensor_name, crosshair_pos=(128, 128), max_distance=2.0):
     :param max_distance: distance threshold beyond which objects won't
         be considered
     """
-    render_camera = sim._sensors[sensor_name]._sensor_object.render_camera
+    visual_sensor = sim._sensors[sensor_name]
+    scene_graph = sim.get_active_scene_graph()
+    scene_graph.set_default_render_camera_parameters(
+        visual_sensor._sensor_object
+    )
+    render_camera = scene_graph.get_default_render_camera()
     center_ray = render_camera.unproject(mn.Vector2i(crosshair_pos))
 
     raycast_results = sim.cast_ray(center_ray, max_distance=max_distance)
@@ -1565,6 +1576,7 @@ class RearrangementRLEnv(NavRLEnv):
 # %%
 import os
 import time
+from collections import defaultdict, deque
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -1574,14 +1586,17 @@ from habitat import Config, logger
 from habitat.utils.visualizations.utils import observations_to_image
 from habitat_baselines.common.baseline_registry import baseline_registry
 from habitat_baselines.common.environments import get_env_class
+from habitat_baselines.common.rollout_storage import RolloutStorage
 from habitat_baselines.common.tensorboard_utils import TensorboardWriter
-from habitat_baselines.rl.models.rnn_state_encoder import (
-    build_rnn_state_encoder,
-)
+from habitat_baselines.rl.models.rnn_state_encoder import RNNStateEncoder
 from habitat_baselines.rl.ppo import PPO
 from habitat_baselines.rl.ppo.policy import Net, Policy
 from habitat_baselines.rl.ppo.ppo_trainer import PPOTrainer
-from habitat_baselines.utils.common import batch_obs, generate_video
+from habitat_baselines.utils.common import (
+    batch_obs,
+    generate_video,
+    linear_decay,
+)
 from habitat_baselines.utils.env_utils import make_env_fn
 
 
@@ -1602,7 +1617,7 @@ def construct_envs(
     :return: VectorEnv object created according to specification.
     """
 
-    num_processes = config.NUM_ENVIRONMENTS
+    num_processes = config.NUM_PROCESSES
     configs = []
     env_classes = [env_class for _ in range(num_processes)]
     dataset = habitat.datasets.make_dataset(config.TASK_CONFIG.DATASET.TYPE)
@@ -1680,8 +1695,9 @@ class RearrangementBaselineNet(Net):
 
         self._hidden_size = hidden_size
 
-        self.state_encoder = build_rnn_state_encoder(
-            2 * self._n_input_goal, self._hidden_size
+        self.state_encoder = RNNStateEncoder(
+            2 * self._n_input_goal,
+            self._hidden_size,
         )
 
         self.train()
@@ -1745,58 +1761,107 @@ class RearrangementTrainer(PPOTrainer):
             use_normalized_advantage=ppo_cfg.use_normalized_advantage,
         )
 
-    def _init_envs(self, config=None):
-        if config is None:
-            config = self.config
-
-        self.envs = construct_envs(config, get_env_class(config.ENV_NAME))
-
     def train(self) -> None:
         r"""Main method for training PPO.
 
         Returns:
             None
         """
-        if self._is_distributed:
-            raise RuntimeError("This trainer does not support distributed")
-        self._init_train()
 
+        self.envs = construct_envs(
+            self.config, get_env_class(self.config.ENV_NAME)
+        )
+
+        ppo_cfg = self.config.RL.PPO
+        self.device = (
+            torch.device("cuda", self.config.TORCH_GPU_ID)
+            if torch.cuda.is_available()
+            else torch.device("cpu")
+        )
+        if not os.path.isdir(self.config.CHECKPOINT_FOLDER):
+            os.makedirs(self.config.CHECKPOINT_FOLDER)
+        self._setup_actor_critic_agent(ppo_cfg)
+        logger.info(
+            "agent number of parameters: {}".format(
+                sum(param.numel() for param in self.agent.parameters())
+            )
+        )
+
+        rollouts = RolloutStorage(
+            ppo_cfg.num_steps,
+            self.envs.num_envs,
+            self.envs.observation_spaces[0],
+            self.envs.action_spaces[0],
+            ppo_cfg.hidden_size,
+        )
+        rollouts.to(self.device)
+
+        observations = self.envs.reset()
+        batch = batch_obs(observations, device=self.device)
+
+        for sensor in rollouts.observations:
+            rollouts.observations[sensor][0].copy_(batch[sensor])
+
+        # batch and observations may contain shared PyTorch CUDA
+        # tensors.  We must explicitly clear them here otherwise
+        # they will be kept in memory for the entire duration of training!
+        batch = None
+        observations = None
+
+        current_episode_reward = torch.zeros(self.envs.num_envs, 1)
+        running_episode_stats = dict(
+            count=torch.zeros(self.envs.num_envs, 1),
+            reward=torch.zeros(self.envs.num_envs, 1),
+        )
+        window_episode_stats = defaultdict(
+            lambda: deque(maxlen=ppo_cfg.reward_window_size)
+        )
+
+        t_start = time.time()
+        env_time = 0
+        pth_time = 0
+        count_steps = 0
         count_checkpoints = 0
 
         lr_scheduler = LambdaLR(
             optimizer=self.agent.optimizer,
-            lr_lambda=lambda _: 1 - self.percent_done(),
+            lr_lambda=lambda x: linear_decay(x, self.config.NUM_UPDATES),
         )
-        ppo_cfg = self.config.RL.PPO
 
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR, flush_secs=self.flush_secs
         ) as writer:
-            while not self.is_done():
+            for update in range(self.config.NUM_UPDATES):
+                if ppo_cfg.use_linear_lr_decay:
+                    lr_scheduler.step()
 
                 if ppo_cfg.use_linear_clip_decay:
-                    self.agent.clip_param = ppo_cfg.clip_param * (
-                        1 - self.percent_done()
+                    self.agent.clip_param = ppo_cfg.clip_param * linear_decay(
+                        update, self.config.NUM_UPDATES
                     )
 
-                count_steps_delta = 0
                 for _step in range(ppo_cfg.num_steps):
-                    count_steps_delta += self._collect_rollout_step()
+                    (
+                        delta_pth_time,
+                        delta_env_time,
+                        delta_steps,
+                    ) = self._collect_rollout_step(
+                        rollouts, current_episode_reward, running_episode_stats
+                    )
+                    pth_time += delta_pth_time
+                    env_time += delta_env_time
+                    count_steps += delta_steps
 
                 (
+                    delta_pth_time,
                     value_loss,
                     action_loss,
                     dist_entropy,
-                ) = self._update_agent()
+                ) = self._update_agent(ppo_cfg, rollouts)
+                pth_time += delta_pth_time
 
-                if ppo_cfg.use_linear_lr_decay:
-                    lr_scheduler.step()  # type: ignore
-
-                losses = self._coalesce_post_step(
-                    dict(value_loss=value_loss, action_loss=action_loss),
-                    count_steps_delta,
-                )
-                self.num_updates_done += 1
+                for k, v in running_episode_stats.items():
+                    window_episode_stats[k].append(v.clone())
 
                 deltas = {
                     k: (
@@ -1804,14 +1869,12 @@ class RearrangementTrainer(PPOTrainer):
                         if len(v) > 1
                         else v[0].sum().item()
                     )
-                    for k, v in self.window_episode_stats.items()
+                    for k, v in window_episode_stats.items()
                 }
                 deltas["count"] = max(deltas["count"], 1.0)
 
                 writer.add_scalar(
-                    "reward",
-                    deltas["reward"] / deltas["count"],
-                    self.num_steps_done,
+                    "reward", deltas["reward"] / deltas["count"], count_steps
                 )
 
                 # Check to see if there are any metrics
@@ -1820,37 +1883,31 @@ class RearrangementTrainer(PPOTrainer):
                 for k, v in deltas.items():
                     if k not in {"reward", "count"}:
                         writer.add_scalar(
-                            "metric/" + k,
-                            v / deltas["count"],
-                            self.num_steps_done,
+                            "metric/" + k, v / deltas["count"], count_steps
                         )
 
                 losses = [value_loss, action_loss]
                 for l, k in zip(losses, ["value, policy"]):
-                    writer.add_scalar("losses/" + k, l, self.num_steps_done)
+                    writer.add_scalar("losses/" + k, l, count_steps)
 
                 # log stats
-                if self.num_updates_done % self.config.LOG_INTERVAL == 0:
+                if update > 0 and update % self.config.LOG_INTERVAL == 0:
                     logger.info(
                         "update: {}\tfps: {:.3f}\t".format(
-                            self.num_updates_done,
-                            self.num_steps_done / (time.time() - self.t_start),
+                            update, count_steps / (time.time() - t_start)
                         )
                     )
 
                     logger.info(
                         "update: {}\tenv-time: {:.3f}s\tpth-time: {:.3f}s\t"
                         "frames: {}".format(
-                            self.num_updates_done,
-                            self.env_time,
-                            self.pth_time,
-                            self.num_steps_done,
+                            update, env_time, pth_time, count_steps
                         )
                     )
 
                     logger.info(
                         "Average window size: {}  {}".format(
-                            len(self.window_episode_stats["count"]),
+                            len(window_episode_stats["count"]),
                             "  ".join(
                                 "{}: {:.3f}".format(k, v / deltas["count"])
                                 for k, v in deltas.items()
@@ -1860,10 +1917,9 @@ class RearrangementTrainer(PPOTrainer):
                     )
 
                 # checkpoint model
-                if self.should_checkpoint():
+                if update % self.config.CHECKPOINT_INTERVAL == 0:
                     self.save_checkpoint(
-                        f"ckpt.{count_checkpoints}.pth",
-                        dict(step=self.num_steps_done),
+                        f"ckpt.{count_checkpoints}.pth", dict(step=count_steps)
                     )
                     count_checkpoints += 1
 
@@ -1879,7 +1935,7 @@ class RearrangementTrainer(PPOTrainer):
 
         if len(self.config.VIDEO_OPTION) > 0:
             config.defrost()
-            config.NUM_ENVIRONMENTS = 1
+            config.NUM_PROCESSES = 1
             config.freeze()
 
         logger.info(f"env config: {config}")
@@ -1892,26 +1948,20 @@ class RearrangementTrainer(PPOTrainer):
             )
             ppo_cfg = self.config.RL.PPO
             test_recurrent_hidden_states = torch.zeros(
-                config.NUM_ENVIRONMENTS,
                 self.actor_critic.net.num_recurrent_layers,
+                config.NUM_PROCESSES,
                 ppo_cfg.hidden_size,
                 device=self.device,
             )
             prev_actions = torch.zeros(
-                config.NUM_ENVIRONMENTS,
-                1,
-                device=self.device,
-                dtype=torch.long,
+                config.NUM_PROCESSES, 1, device=self.device, dtype=torch.long
             )
             not_done_masks = torch.zeros(
-                config.NUM_ENVIRONMENTS,
-                1,
-                device=self.device,
-                dtype=torch.bool,
+                config.NUM_PROCESSES, 1, device=self.device
             )
 
             rgb_frames = [
-                [] for _ in range(self.config.NUM_ENVIRONMENTS)
+                [] for _ in range(self.config.NUM_PROCESSES)
             ]  # type: List[List[np.ndarray]]
 
             if len(config.VIDEO_OPTION) > 0:
@@ -1946,9 +1996,9 @@ class RearrangementTrainer(PPOTrainer):
                 batch = batch_obs(observations, device=self.device)
 
                 not_done_masks = torch.tensor(
-                    [[not done] for done in dones],
-                    dtype=torch.bool,
-                    device="cpu",
+                    [[0.0] if done else [1.0] for done in dones],
+                    dtype=torch.float,
+                    device=self.device,
                 )
 
                 rewards = torch.tensor(
@@ -1958,7 +2008,7 @@ class RearrangementTrainer(PPOTrainer):
                 current_episode_reward += rewards
 
                 # episode ended
-                if not not_done_masks[0].item():
+                if not_done_masks[0].item() == 0:
                     generate_video(
                         video_option=self.config.VIDEO_OPTION,
                         video_dir=self.config.VIDEO_DIR,
@@ -1986,8 +2036,6 @@ class RearrangementTrainer(PPOTrainer):
                 elif len(self.config.VIDEO_OPTION) > 0:
                     frame = observations_to_image(observations[0], infos[0])
                     rgb_frames[0].append(frame)
-
-                not_done_masks = not_done_masks.to(device=self.device)
 
 
 # %%
@@ -2020,10 +2068,9 @@ baseline_config.TORCH_GPU_ID = 0
 baseline_config.VIDEO_OPTION = ["disk"]
 baseline_config.TENSORBOARD_DIR = "data/tb"
 baseline_config.VIDEO_DIR = "data/videos"
-baseline_config.NUM_ENVIRONMENTS = 2
+baseline_config.NUM_PROCESSES = 2
 baseline_config.SENSORS = ["RGB_SENSOR", "DEPTH_SENSOR"]
 baseline_config.CHECKPOINT_FOLDER = "data/checkpoints"
-baseline_config.TOTAL_NUM_STEPS = -1.0
 
 if vut.is_notebook():
     baseline_config.NUM_UPDATES = 400  # @param {type:"number"}
@@ -2031,7 +2078,7 @@ else:
     baseline_config.NUM_UPDATES = 1
 
 baseline_config.LOG_INTERVAL = 10
-baseline_config.NUM_CHECKPOINTS = 5
+baseline_config.CHECKPOINT_INTERVAL = 50
 baseline_config.LOG_FILE = "data/checkpoints/train.log"
 baseline_config.EVAL.SPLIT = "train"
 baseline_config.RL.SUCCESS_REWARD = 2.5  # @param {type:"number"}

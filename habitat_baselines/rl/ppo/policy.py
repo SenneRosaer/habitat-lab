@@ -16,9 +16,7 @@ from habitat.tasks.nav.nav import (
     PointGoalSensor,
 )
 from habitat_baselines.common.baseline_registry import baseline_registry
-from habitat_baselines.rl.models.rnn_state_encoder import (
-    build_rnn_state_encoder,
-)
+from habitat_baselines.rl.models.rnn_state_encoder import RNNStateEncoder
 from habitat_baselines.rl.models.simple_cnn import SimpleCNN
 from habitat_baselines.utils.common import CategoricalNet
 
@@ -76,7 +74,7 @@ class Policy(nn.Module, metaclass=abc.ABCMeta):
         value = self.critic(features)
 
         action_log_probs = distribution.log_probs(action)
-        distribution_entropy = distribution.entropy()
+        distribution_entropy = distribution.entropy().mean()
 
         return value, action_log_probs, distribution_entropy, rnn_hidden_states
 
@@ -183,7 +181,7 @@ class PointNavBaselineNet(Net):
 
         self.visual_encoder = SimpleCNN(observation_space, hidden_size)
 
-        self.state_encoder = build_rnn_state_encoder(
+        self.state_encoder = RNNStateEncoder(
             (0 if self.is_blind else self._hidden_size) + self._n_input_goal,
             self._hidden_size,
         )

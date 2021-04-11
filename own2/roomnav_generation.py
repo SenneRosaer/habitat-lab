@@ -93,6 +93,9 @@ def generate_roomnav_episode(
                 room = annotation_json["regions"][np.random.randint( len(annotation_json["regions"]))]
                 #room = annotation_json["regions"][3]
 
+                # rooms = [15, 2]
+                # rnd = np.random.randint(0,len(rooms))
+                # room = annotation_json["regions"][rooms[rnd]]
                 room_id = room["number"]
                 room_points = room["points"]
 
@@ -148,7 +151,7 @@ def generate_roomnav_episode(
                                 distances.append(d)
                             for i in distances:
                                 vt = [v3[0] * i, v3[1] * i]
-                                points.append([p1[0] + vt[0], p1[1] + vt[1]])
+                                points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
                     point = poly.centroid
                     new_point = [point.x, 0.2, point.y]
 

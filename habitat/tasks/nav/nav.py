@@ -81,10 +81,10 @@ class NavigationGoal:
 class RoomGoal(NavigationGoal):
     r"""Room goal that can be specified by room_id or position with radius."""
 
-    room_id: str = attr.ib(default=None, validator=not_none_validator)
-    room_name: Optional[str] = None
-    room_bound_points: List[List[float]] = attr.ib(default=None, validator=not_none_validator)
-    room_bounds: List[List[float]] = None
+    semantic_id: str = attr.ib(default=None, validator=not_none_validator)
+    room_names: Optional[List[str]] = None
+    rooms_bound_points: List[List[List[float]]] = attr.ib(default=None, validator=not_none_validator)
+    rooms_bounds: List[List[List[float]]] = None
 
 @attr.s(auto_attribs=True, kw_only=True)
 class NavigationEpisode(Episode):
@@ -322,7 +322,7 @@ class RoomGoalSensor(Sensor):
         **kwargs: Any,
     ):
 
-        return np.array([episode.goals[0].room_id-1], dtype=np.int64)
+        return np.array([episode.goals[0].semantic], dtype=np.int64)
 
 @registry.register_sensor(name="PointGoalWithGPSCompassSensor")
 class IntegratedPointGoalGPSAndCompassSensor(PointGoalSensor):
@@ -566,9 +566,12 @@ class RoomNavMetricPoint(Measure):
         if self._previous_position is None or not np.allclose(
             self._previous_position, current_position, atol=1e-4
         ):
+            tmp = []
+            for room in episode.goals[0].rooms_bound_points:
+                tmp += room
             distance_to_target = self._sim.geodesic_distance(
                 current_position,
-                episode.goals[0].room_bound_points,
+                tmp,
                 episode,
             )
 

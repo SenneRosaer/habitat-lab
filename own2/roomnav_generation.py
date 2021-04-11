@@ -62,7 +62,7 @@ def _create_episode(
     room_id,
     info: Optional[Dict[str, float]] = None,
 ) -> Optional[NavigationEpisode]:
-    goals = [RoomGoal(position=target_point,room_id=room_id, room_bound_points=target_points, room_bounds=room_bounds)]
+    goals = [RoomGoal(position=target_point,semantic_id=room_id, rooms_bound_points=target_points, rooms_bounds=room_bounds)]
     return NavigationEpisode(
         episode_id=str(episode_id),
         goals=goals,
@@ -90,80 +90,85 @@ def generate_roomnav_episode(
 
     while episode_count < num_episodes or num_episodes < 0:
                 source_position = sim.sample_navigable_point()
-                room = annotation_json["regions"][np.random.randint( len(annotation_json["regions"]))]
-                #room = annotation_json["regions"][3]
-
-                # rooms = [15, 2]
-                # rnd = np.random.randint(0,len(rooms))
-                # room = annotation_json["regions"][rooms[rnd]]
-                room_id = room["number"]
-                room_points = room["points"]
-
-                poly = Polygon(room_points)
-                minx, miny, maxx, maxy = poly.bounds
+                semantics = ["storage", "meeting room", "office space", "office", "café", "elevators", "server", "toilet", "stairs", "hallway"]
+                #semantic_id = np.random.randint(len(semantics))
+                semantic_id = 3
+                rooms = []
+                for room in annotation_json["regions"]:
+                    if room["semantics"] == semantics[semantic_id]:
+                        rooms.append(room)
+                rooms_bound_points = []
+                rooms_bounds = []
                 is_compatible = False
-                for _retry in range(20):
-                    point = Point([np.random.uniform(minx, maxx),np.random.uniform(miny, maxy)])
-                    if not point.within(poly):
-                        continue
-                    tmp = [point.coords[0][0],0.2, point.coords[0][1]]
-                    if not sim.is_navigable(tmp):
-                        continue
+                for room in rooms:
+                    room_id = room["number"]
+                    rooms_bounds.append(room["points"])
 
-                    is_compatible, dist = is_compatible_episode(
-                        source_position,
-                        tmp,
-                        sim,
-                        near_dist=closest_dist_limit,
-                        far_dist=furthest_dist_limit,
-                        geodesic_to_euclid_ratio=geodesic_to_euclid_min_ratio,
-                    )
+                    poly = Polygon(rooms_bounds[-1])
+                    minx, miny, maxx, maxy = poly.bounds
+                    for _retry in range(20):
+                        point = Point([np.random.uniform(minx, maxx),np.random.uniform(miny, maxy)])
+                        if not point.within(poly):
+                            continue
+                        tmp = [point.coords[0][0],0.2, point.coords[0][1]]
+                        if not sim.is_navigable(tmp):
+                            continue
+
+                        is_compatible, dist = is_compatible_episode(
+                            source_position,
+                            tmp,
+                            sim,
+                            near_dist=closest_dist_limit,
+                            far_dist=furthest_dist_limit,
+                            geodesic_to_euclid_ratio=geodesic_to_euclid_min_ratio,
+                        )
+                        if is_compatible:
+                            break
+
+                    tmp_point = Point([source_position[0],source_position[2]])
+                    if tmp_point.within(poly):
+                        is_compatible = False
                     if is_compatible:
-                        break
+                        angle = np.random.uniform(0, 2 * np.pi)
+                        source_rotation = [0, np.sin(angle / 2), 0, np.cos(angle / 2)]
 
-                tmp_point = Point([source_position[0],source_position[2]])
-                if tmp_point.within(poly):
-                    is_compatible = False
+                        poly_n = poly.buffer(-0.3)
+                        points = []
+                        for i in range(-1, len(poly.exterior.coords.xy[0]) - 1):
+                            tmp = poly.exterior.coords.xy
+                            p1 = [poly.exterior.coords.xy[0][i],
+                                  poly.exterior.coords.xy[1][i]]
+                            p2 = [poly.exterior.coords.xy[0][i + 1],
+                                  poly.exterior.coords.xy[1][i + 1]]
+                            if p1 != p2:
+                                v = [p2[0] - p1[0], p2[1] - p1[1]]
+                                v2 = math.sqrt(
+                                    math.pow(v[0], 2) + math.pow(v[1], 2))
+                                v3 = [v[0] / v2, v[1] / v2]
+
+                                distances = []
+                                d = 0
+                                while True:
+                                    d += 0.5
+                                    if d > v2:
+                                        break
+                                    distances.append(d)
+                                for i in distances:
+                                    vt = [v3[0] * i, v3[1] * i]
+                                    points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
+                        point = poly.centroid
+                        new_point = [point.x, 0.2, point.y]
+                        rooms_bound_points.append(points)
                 if is_compatible:
-                    angle = np.random.uniform(0, 2 * np.pi)
-                    source_rotation = [0, np.sin(angle / 2), 0, np.cos(angle / 2)]
-
-                    poly_n = poly.buffer(-0.3)
-                    points = []
-                    for i in range(-1, len(poly.exterior.coords.xy[0]) - 1):
-                        tmp = poly.exterior.coords.xy
-                        p1 = [poly.exterior.coords.xy[0][i],
-                              poly.exterior.coords.xy[1][i]]
-                        p2 = [poly.exterior.coords.xy[0][i + 1],
-                              poly.exterior.coords.xy[1][i + 1]]
-                        if p1 != p2:
-                            v = [p2[0] - p1[0], p2[1] - p1[1]]
-                            v2 = math.sqrt(
-                                math.pow(v[0], 2) + math.pow(v[1], 2))
-                            v3 = [v[0] / v2, v[1] / v2]
-
-                            distances = []
-                            d = 0
-                            while True:
-                                d += 0.5
-                                if d > v2:
-                                    break
-                                distances.append(d)
-                            for i in distances:
-                                vt = [v3[0] * i, v3[1] * i]
-                                points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
-                    point = poly.centroid
-                    new_point = [point.x, 0.2, point.y]
-
                     episode = _create_episode(
                         episode_id=episode_count,
                         scene_id="beacon/v0/beacon-7/beacon-7.glb",
                         start_position=source_position,
                         start_rotation=source_rotation,
                         target_point=new_point,
-                        target_points=points,
+                        target_points=rooms_bound_points,
                         room_id=room_id,
-                        room_bounds=room_points,
+                        room_bounds=rooms_bounds,
                         info={"geodesic_distance": dist}
                     )
 

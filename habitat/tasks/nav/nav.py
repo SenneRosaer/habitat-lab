@@ -322,7 +322,7 @@ class RoomGoalSensor(Sensor):
         **kwargs: Any,
     ):
 
-        return np.array([episode.goals[0].semantic], dtype=np.int64)
+        return np.array([episode.goals[0].semantic_id], dtype=np.int64)
 
 @registry.register_sensor(name="PointGoalWithGPSCompassSensor")
 class IntegratedPointGoalGPSAndCompassSensor(PointGoalSensor):
@@ -666,15 +666,17 @@ class RoomSuccess(Measure):
         point = self._sim.get_agent_state().position.tolist()
         point = [point[0], point[2]]
         point = Point(point)
-        poly = Polygon(episode.goals[0].room_bounds)
-        if (
-            hasattr(task, "is_stop_called")
-            and task.is_stop_called  # type: ignore
-            and point.within(poly)
-        ):
-            self._metric = 1.0
-        else:
-            self._metric = 0.0
+        for room in episode.goals[0].rooms_bounds:
+            poly = Polygon(room)
+            if (
+                hasattr(task, "is_stop_called")
+                and task.is_stop_called  # type: ignore
+                and point.within(poly)
+            ):
+                self._metric = 1.0
+                break
+            else:
+                self._metric = 0.0
 
 @registry.register_measure
 class Success(Measure):

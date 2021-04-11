@@ -102,7 +102,7 @@ class RoomNavRLEnv(habitat.RLEnv):
         observations = super().reset()
         self._previous_target_distance = self._env.sim.geodesic_distance(self._env.current_episode.start_position,self._env.current_episode.goals[0].position)
         self._previous_measure = 0
-        self._poly = Polygon(self._env.current_episode.goals[0].room_bounds)
+        self._rooms = self._env.current_episode.goals[0].rooms_bounds
         return observations
 
     def step(self, *args, **kwargs):
@@ -143,8 +143,10 @@ class RoomNavRLEnv(habitat.RLEnv):
         point = [point[0], point[2]]
         point = Point(point)
         success = False
-        if point.within(self._poly) and self._env.task.is_stop_called:
-            success = True
+        for room in self._rooms:
+            poly = Polygon(room)
+            if point.within(poly) and self._env.task.is_stop_called:
+                success = True
         return success
 
     def get_done(self, observations):

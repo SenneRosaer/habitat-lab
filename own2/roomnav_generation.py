@@ -157,7 +157,7 @@ def generate_roomnav_episode(
                                 for i in distances:
                                     vt = [v3[0] * i, v3[1] * i]
                                     points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
-                        point = poly_n.centroid
+                        point = poly.centroid
                         new_point = [point.x, 0.2, point.y]
                         rooms_bound_points.append(points)
                 if is_compatible:

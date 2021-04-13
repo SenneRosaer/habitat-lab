@@ -59,10 +59,10 @@ def _create_episode(
     target_point,
     target_points,
     room_bounds,
-    room_id,
+    semantic_id,
     info: Optional[Dict[str, float]] = None,
 ) -> Optional[NavigationEpisode]:
-    goals = [RoomGoal(position=target_point,semantic_id=room_id, rooms_bound_points=target_points, rooms_bounds=room_bounds)]
+    goals = [RoomGoal(position=target_point,semantic_id=semantic_id, rooms_bound_points=target_points, rooms_bounds=room_bounds)]
     return NavigationEpisode(
         episode_id=str(episode_id),
         goals=goals,
@@ -89,6 +89,7 @@ def generate_roomnav_episode(
     episode_count = 0
 
     while episode_count < num_episodes or num_episodes < 0:
+                print(episode_count)
                 source_position = sim.sample_navigable_point()
                 semantics = ["storage", "meeting room", "office space", "office", "café", "elevators", "server", "toilet", "stairs", "hallway"]
                 #semantic_id = np.random.randint(len(semantics))
@@ -136,10 +137,10 @@ def generate_roomnav_episode(
                         points = []
                         for i in range(-1, len(poly.exterior.coords.xy[0]) - 1):
                             tmp = poly.exterior.coords.xy
-                            p1 = [poly.exterior.coords.xy[0][i],
-                                  poly.exterior.coords.xy[1][i]]
-                            p2 = [poly.exterior.coords.xy[0][i + 1],
-                                  poly.exterior.coords.xy[1][i + 1]]
+                            p1 = [poly_n.exterior.coords.xy[0][i],
+                                  poly_n.exterior.coords.xy[1][i]]
+                            p2 = [poly_n.exterior.coords.xy[0][i + 1],
+                                  poly_n.exterior.coords.xy[1][i + 1]]
                             if p1 != p2:
                                 v = [p2[0] - p1[0], p2[1] - p1[1]]
                                 v2 = math.sqrt(
@@ -156,18 +157,18 @@ def generate_roomnav_episode(
                                 for i in distances:
                                     vt = [v3[0] * i, v3[1] * i]
                                     points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
-                        point = poly.centroid
+                        point = poly_n.centroid
                         new_point = [point.x, 0.2, point.y]
                         rooms_bound_points.append(points)
                 if is_compatible:
                     episode = _create_episode(
                         episode_id=episode_count,
-                        scene_id="beacon/v0/beacon-7/beacon-7.glb",
+                        scene_id="beacon/beacon-7-untrimmed.glb",
                         start_position=source_position,
                         start_rotation=source_rotation,
                         target_point=new_point,
                         target_points=rooms_bound_points,
-                        room_id=room_id,
+                        semantic_id=semantic_id,
                         room_bounds=rooms_bounds,
                         info={"geodesic_distance": dist}
                     )

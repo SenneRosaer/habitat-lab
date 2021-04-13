@@ -90,7 +90,7 @@ for split, size in splits:
         dataset.episodes = [e for e in generator]
 
         # Store scene dataset.
-        with gzip.open(path / split / 'content' / f'{scene}.json.gz', 'wb') as f:
+        with gzip.open(path / split / 'content' / 'beacon-7-untrimmed.json.gz', 'wb') as f:
             f.write(dataset.to_json().encode())
 
         sim.close()

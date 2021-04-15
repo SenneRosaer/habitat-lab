@@ -1035,11 +1035,11 @@ class PPOTrainer(BaseRLTrainer):
                     if 'POINTGOAL_WITH_GPS_COMPASS_SENSOR' in self.config.TASK_CONFIG.TASK.SENSORS:
                         infos[i]['point'] = current_episodes[0].goals[0].position
                     if 'roomnavmetricpoint' in infos[i]:
-                        infos[i]['roompoints'] = current_episodes[0].goals[0].room_bound_points
+                        infos[i]['roompoints'] = current_episodes[0].goals[0].rooms_bound_points
 
                     if 'roomnavmetric' in infos[i] or 'roomnavmetricpoint' in infos[i]:
                         infos[i]['room'] = current_episodes[0].goals[
-                            0].room_bounds
+                            0].rooms_bounds
 
                     frame = observations_to_image(
                         {k: v[i] for k, v in batch.items()}, infos[i]
@@ -1092,7 +1092,6 @@ class PPOTrainer(BaseRLTrainer):
             writer.add_scalars("eval_metrics", metrics, step_id)
 
         # Wandb logging.
-        print("?????????,")
         log = {k: v for k, v in aggregated_stats.items()}
         log["step"] = step_id
         log["checkpoint"] = checkpoint_index

@@ -129,10 +129,10 @@ def generate_roomnav_episode(
                     points = []
                     for i in range(-1, len(poly.exterior.coords.xy[0]) - 1):
                         tmp = poly.exterior.coords.xy
-                        p1 = [poly.exterior.coords.xy[0][i],
-                              poly.exterior.coords.xy[1][i]]
-                        p2 = [poly.exterior.coords.xy[0][i + 1],
-                              poly.exterior.coords.xy[1][i + 1]]
+                        p1 = [poly_n.exterior.coords.xy[0][i],
+                              poly_n.exterior.coords.xy[1][i]]
+                        p2 = [poly_n.exterior.coords.xy[0][i + 1],
+                              poly_n.exterior.coords.xy[1][i + 1]]
                         if p1 != p2:
                             v = [p2[0] - p1[0], p2[1] - p1[1]]
                             v2 = math.sqrt(
@@ -148,7 +148,7 @@ def generate_roomnav_episode(
                                 distances.append(d)
                             for i in distances:
                                 vt = [v3[0] * i, v3[1] * i]
-                                points.append([p1[0] + vt[0], p1[1] + vt[1]])
+                                points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
                     point = poly.centroid
                     new_point = [point.x, 0.2, point.y]
 

@@ -211,8 +211,11 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
     if 'room' in info:
         lo = [-8.416683, -4.635123, -11.14608]
         hi = [55.16621, 6.341098, 12.464998]
-        length = (abs(lo[0]) + abs(hi[0]))/len(top_down_map[0])
+        grid = (
+            abs(hi[2] - lo[2]) / len(top_down_map),
+            abs(hi[0] - lo[0]) / len(top_down_map[0]),
 
+        )
         for room in info['room']:
             points = []
             poly = Polygon(room)
@@ -238,7 +241,7 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
                         vt = [v3[0] * i, v3[1] * i]
                         points.append([p1[0] + vt[0], p1[1] + vt[1]])
             for point in points:
-                t1 = (math.floor((point[0]-lo[0])/length), math.floor((-(-point[1]-hi[2]))/length))
+                t1 = (math.floor((point[0] - lo[0])/grid[1]), math.floor((point[1] - lo[2])/grid[0]))
                 for i in range(t1[1]-1, t1[1]+1):
                     for j in range(t1[0]-1, t1[0]+1):
                         top_down_map[i][j] = np.array([255,127,80])
@@ -246,24 +249,27 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
     if 'roompoints' in info:
         lo = [-8.416683, -4.635123, -11.14608]
         hi = [55.16621, 6.341098, 12.464998]
-        length = (abs(lo[0]) + abs(hi[0]))/len(top_down_map[0])
+        grid = (
+            abs(hi[2] - lo[2]) / len(top_down_map),
+            abs(hi[0] - lo[0]) / len(top_down_map[0]),
 
+        )
         for room in info['roompoints']:
             points = room
             for point in points:
-                t1 = (math.floor((point[0]-lo[0])/length), math.floor((-(-point[2]-hi[2]))/length))
+                t1 = (math.floor((point[0] - lo[0])/grid[1]), math.floor((point[2] - lo[2])/grid[0]))
                 for i in range(t1[1]-2, t1[1]+2):
                     for j in range(t1[0]-2, t1[0]+2):
                         top_down_map[i][j] = np.array([80,127,255])
         frame = np.concatenate((egocentric_view, top_down_map), axis=1)
 
-    if 'point' in info:
-        t1 = (math.floor((info['point'][0] - lo[0]) / length),
-              math.floor((-(-info['point'][1] - hi[2])) / length))
-        for i in range(t1[1] - 1, t1[1] + 1):
-            for j in range(t1[0] - 1, t1[0] + 1):
-                top_down_map[i][j] = np.array([255, 0, 0])
-        frame = np.concatenate((egocentric_view, top_down_map), axis=1)
+    # if 'point' in info:
+    #     t1 = (math.floor((info['point'][0] - lo[0]) / length),
+    #           math.floor((-(-info['point'][1] - hi[2])) / length))
+    #     for i in range(t1[1] - 1, t1[1] + 1):
+    #         for j in range(t1[0] - 1, t1[0] + 1):
+    #             top_down_map[i][j] = np.array([255, 0, 0])
+    #     frame = np.concatenate((egocentric_view, top_down_map), axis=1)
     return frame
 
 

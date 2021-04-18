@@ -102,7 +102,6 @@ def generate_roomnav_episode(
                 rooms_bounds = []
                 is_compatible = False
                 for room in rooms:
-                    room_id = room["number"]
                     rooms_bounds.append(room["points"])
 
                     poly = Polygon(rooms_bounds[-1])
@@ -129,37 +128,35 @@ def generate_roomnav_episode(
                     tmp_point = Point([source_position[0],source_position[2]])
                     if tmp_point.within(poly):
                         is_compatible = False
-                    if is_compatible:
-                        angle = np.random.uniform(0, 2 * np.pi)
-                        source_rotation = [0, np.sin(angle / 2), 0, np.cos(angle / 2)]
+                    angle = np.random.uniform(0, 2 * np.pi)
+                    source_rotation = [0, np.sin(angle / 2), 0, np.cos(angle / 2)]
 
-                        poly_n = poly.buffer(-0.3)
-                        points = []
-                        for i in range(-1, len(poly.exterior.coords.xy[0]) - 1):
-                            tmp = poly.exterior.coords.xy
-                            p1 = [poly_n.exterior.coords.xy[0][i],
-                                  poly_n.exterior.coords.xy[1][i]]
-                            p2 = [poly_n.exterior.coords.xy[0][i + 1],
-                                  poly_n.exterior.coords.xy[1][i + 1]]
-                            if p1 != p2:
-                                v = [p2[0] - p1[0], p2[1] - p1[1]]
-                                v2 = math.sqrt(
-                                    math.pow(v[0], 2) + math.pow(v[1], 2))
-                                v3 = [v[0] / v2, v[1] / v2]
+                    poly_n = poly.buffer(-0.5)
+                    points = []
+                    for i in range(-1, len(poly.exterior.coords.xy[0]) - 1):
+                        p1 = [poly_n.exterior.coords.xy[0][i],
+                              poly_n.exterior.coords.xy[1][i]]
+                        p2 = [poly_n.exterior.coords.xy[0][i + 1],
+                              poly_n.exterior.coords.xy[1][i + 1]]
+                        if p1 != p2:
+                            v = [p2[0] - p1[0], p2[1] - p1[1]]
+                            v2 = math.sqrt(
+                                math.pow(v[0], 2) + math.pow(v[1], 2))
+                            v3 = [v[0] / v2, v[1] / v2]
 
-                                distances = []
-                                d = 0
-                                while True:
-                                    d += 0.5
-                                    if d > v2:
-                                        break
-                                    distances.append(d)
-                                for i in distances:
-                                    vt = [v3[0] * i, v3[1] * i]
-                                    points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
-                        point = poly.centroid
-                        new_point = [point.x, 0.2, point.y]
-                        rooms_bound_points.append(points)
+                            distances = []
+                            d = 0
+                            while True:
+                                d += 0.5
+                                if d > v2:
+                                    break
+                                distances.append(d)
+                            for i in distances:
+                                vt = [v3[0] * i, v3[1] * i]
+                                points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
+                    point = poly.centroid
+                    new_point = [point.x, 0.2, point.y]
+                    rooms_bound_points.append(points)
                 if is_compatible:
                     episode = _create_episode(
                         episode_id=episode_count,

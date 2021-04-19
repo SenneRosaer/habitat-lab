@@ -90,9 +90,10 @@ def generate_roomnav_episode(
 
     while episode_count < num_episodes or num_episodes < 0:
                 source_position = sim.sample_navigable_point()
-                room = annotation_json["regions"][np.random.randint( len(annotation_json["regions"]))]
+                #room = annotation_json["regions"][np.random.randint( len(annotation_json["regions"]))]
                 #room = annotation_json["regions"][3]
-
+                tmp = [15, 21, 7, 12]
+                room = annotation_json["regions"][tmp[np.random.randint(len(tmp))]]
                 room_id = room["number"]
                 room_points = room["points"]
 

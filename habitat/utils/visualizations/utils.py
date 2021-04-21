@@ -244,7 +244,7 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
                 t1 = (math.floor((point[0] - lo[0])/grid[1]), math.floor((point[1] - lo[2])/grid[0]))
                 for i in range(t1[1]-1, t1[1]+1):
                     for j in range(t1[0]-1, t1[0]+1):
-                        if i < 256 and j < 256:
+                        if i < 256:
                             top_down_map[i][j] = np.array([255,127,80])
             frame = np.concatenate((egocentric_view, top_down_map), axis=1)
     if 'roompoints' in info:
@@ -261,7 +261,7 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
                 t1 = (math.floor((point[0] - lo[0])/grid[1]), math.floor((point[2] - lo[2])/grid[0]))
                 for i in range(t1[1]-2, t1[1]+2):
                     for j in range(t1[0]-2, t1[0]+2):
-                        if i < 256 and j < 256:
+                        if i < 256:
                             top_down_map[i][j] = np.array([80,127,255])
         frame = np.concatenate((egocentric_view, top_down_map), axis=1)
 

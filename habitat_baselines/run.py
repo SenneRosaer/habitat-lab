@@ -77,6 +77,7 @@ def get_replica_config(config):
     scenes = config.TASK_CONFIG.DATASET.CONTENT_SCENES
     print(scenes)
     if "*" in config.TASK_CONFIG.DATASET.CONTENT_SCENES:
+        print(config.TASK_CONFIG.DATASET)
         scenes = dataset.get_scenes_to_load(config.TASK_CONFIG.DATASET)
 
     if len(scenes) >= config.NUM_ENVIRONMENTS:

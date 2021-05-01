@@ -301,6 +301,9 @@ class EmbodiedTask:
 
         task_action = self.actions[action_name]
         observations = task_action.step(**action["action_args"], task=self)
+        if 'rgb' in observations:
+            observations["rgb"] = observations["rgb"] * np.array([0.299, 0.587, 0.114])
+            observations["rgb"] = observations["rgb"].astype('uint8')
         observations.update(
             self.sensor_suite.get_observations(
                 observations=observations,

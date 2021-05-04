@@ -17,6 +17,7 @@ from habitat.core.dataset import Dataset, Episode
 from habitat.core.simulator import Observations, SensorSuite, Simulator
 from habitat.core.spaces import ActionSpace, EmptySpace, Space
 
+import cv2
 
 class Action:
     r"""
@@ -301,9 +302,10 @@ class EmbodiedTask:
 
         task_action = self.actions[action_name]
         observations = task_action.step(**action["action_args"], task=self)
-        if 'rgb' in observations:
-            observations["rgb"] = observations["rgb"] * np.array([0.299, 0.587, 0.114])
-            observations["rgb"] = observations["rgb"].astype('uint8')
+        if 'rgb' in observations and False:
+            r = cv2.cvtColor(observations["rgb"], cv2.COLOR_RGB2GRAY)
+            r = cv2.cvtColor(r, cv2.COLOR_GRAY2RGB)
+            observations["rgb"] = r
         observations.update(
             self.sensor_suite.get_observations(
                 observations=observations,

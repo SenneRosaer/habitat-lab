@@ -1033,12 +1033,12 @@ class PPOTrainer(BaseRLTrainer):
                     # )
                     # TODO move normalization / channel changing out of the policy and undo it here
                     if 'POINTGOAL_WITH_GPS_COMPASS_SENSOR' in self.config.TASK_CONFIG.TASK.SENSORS:
-                        infos[i]['point'] = current_episodes[0].goals[0].position
+                        infos[i]['point'] = current_episodes[i].goals[0].position
                     if 'roomnavmetricpoint' in infos[i]:
-                        infos[i]['roompoints'] = current_episodes[0].goals[0].rooms_bound_points
+                        infos[i]['roompoints'] = current_episodes[i].goals[0].rooms_bound_points
 
                     if 'roomnavmetric' in infos[i] or 'roomnavmetricpoint' in infos[i]:
-                        infos[i]['room'] = current_episodes[0].goals[
+                        infos[i]['room'] = current_episodes[i].goals[
                             0].rooms_bounds
 
                     frame = observations_to_image(

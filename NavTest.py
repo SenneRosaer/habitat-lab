@@ -55,6 +55,6 @@ if __name__ == "__main__":
     #config = get_replica_config(config)
     trainer_init = baseline_registry.get_trainer(config.TRAINER_NAME)
     trainer = trainer_init(config)
-    trainer.train()
+    #trainer.train()
     trainer.eval()
 

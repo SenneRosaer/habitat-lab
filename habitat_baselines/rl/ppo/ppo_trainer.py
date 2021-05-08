@@ -54,6 +54,7 @@ from habitat_baselines.utils.common import (
 from habitat_baselines.utils.env_utils import construct_envs
 
 import wandb
+import json
 
 @baseline_registry.register_trainer(name="ddppo")
 @baseline_registry.register_trainer(name="ppo")
@@ -917,6 +918,10 @@ class PPOTrainer(BaseRLTrainer):
         rgb_frames = [
             [] for _ in range(self.config.NUM_ENVIRONMENTS)
         ]  # type: List[List[np.ndarray]]
+
+        trajectory = [
+            [] for _ in range(self.config.NUM_ENVIRONMENTS)
+        ]
         if len(self.config.VIDEO_OPTION) > 0:
             os.makedirs(self.config.VIDEO_DIR, exist_ok=True)
 
@@ -1024,7 +1029,12 @@ class PPOTrainer(BaseRLTrainer):
                             tb_writer=writer,
                         )
 
+                        traj_name = f"episode={current_episodes[i].episode_id}-ckpt={checkpoint_index}-.txt"
+                        with open(self.config.VIDEO_DIR+ "/" + traj_name, "w") as f:
+                            f.write(json.dumps({"traj":trajectory[i]}))
+
                         rgb_frames[i] = []
+                        trajectory[i] = []
 
                 # episode continues
                 elif len(self.config.VIDEO_OPTION) > 0:
@@ -1045,7 +1055,7 @@ class PPOTrainer(BaseRLTrainer):
                         {k: v[i] for k, v in batch.items()}, infos[i]
                     )
                     rgb_frames[i].append(frame)
-
+                    trajectory[i].append(infos[i]["top_down_map"]['agent_map_coord'])
             not_done_masks = not_done_masks.to(device=self.device)
             (
                 self.envs,
@@ -1055,6 +1065,7 @@ class PPOTrainer(BaseRLTrainer):
                 prev_actions,
                 batch,
                 rgb_frames,
+                trajectory
             ) = self._pause_envs(
                 envs_to_pause,
                 self.envs,
@@ -1064,6 +1075,7 @@ class PPOTrainer(BaseRLTrainer):
                 prev_actions,
                 batch,
                 rgb_frames,
+                trajectory
             )
 
         num_episodes = len(stats_episodes)

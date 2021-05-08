@@ -274,6 +274,7 @@ class BaseRLTrainer(BaseTrainer):
         prev_actions: Tensor,
         batch: Dict[str, Tensor],
         rgb_frames: Union[List[List[Any]], List[List[ndarray]]],
+        trajectory: Union[List[List[Any]], List[List[ndarray]]]
     ) -> Tuple[
         Union[VectorEnv, RLEnv, Env],
         Tensor,
@@ -282,6 +283,7 @@ class BaseRLTrainer(BaseTrainer):
         Tensor,
         Dict[str, Tensor],
         List[List[Any]],
+        List[List[Any]]
     ]:
         # pausing self.envs with no new episode
         if len(envs_to_pause) > 0:
@@ -302,7 +304,7 @@ class BaseRLTrainer(BaseTrainer):
                 batch[k] = v[state_index]
 
             rgb_frames = [rgb_frames[i] for i in state_index]
-
+            trajectory = [trajectory[i] for i in state_index]
         return (
             envs,
             test_recurrent_hidden_states,
@@ -311,4 +313,5 @@ class BaseRLTrainer(BaseTrainer):
             prev_actions,
             batch,
             rgb_frames,
+            trajectory
         )

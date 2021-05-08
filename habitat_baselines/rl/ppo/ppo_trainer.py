@@ -424,6 +424,7 @@ class PPOTrainer(BaseRLTrainer):
         # in the subprocesses.
         # For backwards compatibility, we also call .item() to convert to
         # an int
+        print(actions)
         actions = actions.to(device="cpu")
         self.pth_time += time.time() - t_sample_action
 
@@ -634,7 +635,7 @@ class PPOTrainer(BaseRLTrainer):
         log = {"reward": deltas["reward"] / deltas["count"], 'update':self.num_updates_done, 'frames': self.num_steps_done, "fps": self.num_steps_done/((time.time()-self.t_start)+prev_time)}
         log.update(metrics)
         log.update({k: l for l, k in zip(losses, ["loss_value", "loss_policy"])})
-        wandb.log(log)
+        # wandb.log(log)
         # log stats
         if self.num_updates_done % self.config.LOG_INTERVAL == 0:
             logger.info(

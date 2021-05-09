@@ -248,7 +248,7 @@ class PointNavResNetNet(Net):
             self.pointgoal_embedding = nn.Linear(input_pointgoal_dim, 32)
             rnn_input_size += 32
         if RoomGoalSensor.cls_uuid in observation_space.spaces:
-            self._n_room_categories = (46)
+            self._n_room_categories = (8)
             self.roomgoal_embedding = nn.Embedding(
                 self._n_room_categories, 32
             )

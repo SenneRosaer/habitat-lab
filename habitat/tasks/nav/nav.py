@@ -423,7 +423,9 @@ class EpisodicCompassSensor(HeadingSensor):
         agent_state = self._sim.get_agent_state()
         rotation_world_agent = agent_state.rotation
         rotation_world_start = quaternion_from_coeff(episode.start_rotation)
-
+        print(self._quat_to_xy_heading(
+            rotation_world_agent.inverse() * rotation_world_start
+        ))
         return self._quat_to_xy_heading(
             rotation_world_agent.inverse() * rotation_world_start
         )

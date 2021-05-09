@@ -424,9 +424,6 @@ class PPOTrainer(BaseRLTrainer):
         # in the subprocesses.
         # For backwards compatibility, we also call .item() to convert to
         # an int
-        for tensor in step_batch["observations"]:
-            print(tensor)
-            print(step_batch['observations'][tensor])
 
         actions = actions.to(device="cpu")
         self.pth_time += time.time() - t_sample_action

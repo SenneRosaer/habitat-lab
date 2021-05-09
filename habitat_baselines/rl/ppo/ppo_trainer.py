@@ -425,6 +425,7 @@ class PPOTrainer(BaseRLTrainer):
         # For backwards compatibility, we also call .item() to convert to
         # an int
         for tensor in step_batch["observations"]:
+            print(tensor)
             print(step_batch['observations'][tensor])
 
         actions = actions.to(device="cpu")

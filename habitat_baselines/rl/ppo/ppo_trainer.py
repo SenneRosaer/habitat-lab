@@ -426,6 +426,7 @@ class PPOTrainer(BaseRLTrainer):
         # an int
         for tensor in step_batch["observations"]:
             print(step_batch['observations'][tensor])
+
         actions = actions.to(device="cpu")
         self.pth_time += time.time() - t_sample_action
 

@@ -302,7 +302,7 @@ class EmbodiedTask:
 
         task_action = self.actions[action_name]
         observations = task_action.step(**action["action_args"], task=self)
-        if 'rgb' in observations and False:
+        if 'rgb' in observations:
             r = cv2.cvtColor(observations["rgb"], cv2.COLOR_RGB2GRAY)
             r = cv2.cvtColor(r, cv2.COLOR_GRAY2RGB)
             observations["rgb"] = r

@@ -75,6 +75,7 @@ def _create_episode(
 
 
 def generate_roomnav_episode(
+    scene,
     sim: "HabitatSim",
     annotation_json: dict,
     num_episodes: int = -1,
@@ -91,9 +92,9 @@ def generate_roomnav_episode(
     while episode_count < num_episodes or num_episodes < 0:
                 print(episode_count)
                 source_position = sim.sample_navigable_point()
-                semantics = ["storage", "meeting room", "office space", "office", "café", "elevators", "server", "toilet", "stairs", "hallway"]
+                semantics = ["storage", "meeting room", "office space", "office", "elevators", "toilet", "stairs", "hallway"]
                 #semantic_id = np.random.randint(len(semantics))
-                semantic_id = 3
+                semantic_id = 1
                 rooms = []
                 for room in annotation_json["regions"]:
                     if room["semantics"] == semantics[semantic_id]:
@@ -156,19 +157,34 @@ def generate_roomnav_episode(
                                 points.append([p1[0] + vt[0],0.2, p1[1] + vt[1]])
                     point = poly.centroid
                     new_point = [point.x, 0.2, point.y]
+                    if points == []:
+                        points.append(new_point)
                     rooms_bound_points.append(points)
                 if is_compatible:
-                    episode = _create_episode(
-                        episode_id=episode_count,
-                        scene_id="beacon/beacon-7-untrimmed.glb",
-                        start_position=source_position,
-                        start_rotation=source_rotation,
-                        target_point=new_point,
-                        target_points=rooms_bound_points,
-                        semantic_id=semantic_id,
-                        room_bounds=rooms_bounds,
-                        info={"geodesic_distance": dist}
-                    )
+                    if scene == 'beacon-6':
+                        episode = _create_episode(
+                            episode_id=episode_count,
+                            scene_id="beacon/beacon-6.glb",
+                            start_position=source_position,
+                            start_rotation=source_rotation,
+                            target_point=new_point,
+                            target_points=rooms_bound_points,
+                            semantic_id=semantic_id,
+                            room_bounds=rooms_bounds,
+                            info={"geodesic_distance": dist}
+                        )
+                    elif scene == 'beacon-7':
+                        episode = _create_episode(
+                            episode_id=episode_count,
+                            scene_id="beacon/beacon-7-untrimmed.glb",
+                            start_position=source_position,
+                            start_rotation=source_rotation,
+                            target_point=new_point,
+                            target_points=rooms_bound_points,
+                            semantic_id=semantic_id,
+                            room_bounds=rooms_bounds,
+                            info={"geodesic_distance": dist}
+                        )
 
                     episode_count += 1
                     yield episode

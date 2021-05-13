@@ -92,6 +92,7 @@ def get_replica_config(config):
     # Update config.
     config.defrost()
     config.TASK_CONFIG.DATASET.CONTENT_SCENES = scenes * num_replicas
+    config.NUM_PROCESSES = 1
     config.freeze()
 
     return config

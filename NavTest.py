@@ -52,7 +52,7 @@ if __name__ == "__main__":
     config = get_baselines_config(
         "./habitat_baselines/config/roomnav/ppo_roomnav.yaml"
     )
-    #config = get_replica_config(config)
+    config = get_replica_config(config)
     trainer_init = baseline_registry.get_trainer(config.TRAINER_NAME)
     trainer = trainer_init(config)
     trainer.train()

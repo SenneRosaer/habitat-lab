@@ -147,20 +147,26 @@ class PPOTrainer(BaseRLTrainer):
             )
 
         if self.config.RL.DDPPO.pretrained:
-            self.actor_critic.load_state_dict(
-                {
+            new_dict = {
                     k[len("actor_critic.") :]: v
                     for k, v in pretrained_state["state_dict"].items()
                 }
+            self.actor_critic.load_state_dict(
+                new_dict
             )
         elif self.config.RL.DDPPO.pretrained_encoder:
             prefix = "actor_critic.net.visual_encoder."
-            self.actor_critic.net.visual_encoder.load_state_dict(
-                {
+            new_dict = {
                     k[len(prefix) :]: v
                     for k, v in pretrained_state["state_dict"].items()
                     if k.startswith(prefix)
                 }
+            new_dict["running_mean_and_var._mean"] = self.actor_critic.net.visual_encoder.running_mean_and_var._mean
+            new_dict["running_mean_and_var._var"] = self.actor_critic.net.visual_encoder.running_mean_and_var._var
+            new_dict["running_mean_and_var._count"] = self.actor_critic.net.visual_encoder.running_mean_and_var._count
+
+            self.actor_critic.net.visual_encoder.load_state_dict(
+                new_dict
             )
 
         if not self.config.RL.DDPPO.train_encoder:
@@ -635,7 +641,7 @@ class PPOTrainer(BaseRLTrainer):
         log = {"reward": deltas["reward"] / deltas["count"], 'update':self.num_updates_done, 'frames': self.num_steps_done, "fps": self.num_steps_done/((time.time()-self.t_start)+prev_time)}
         log.update(metrics)
         log.update({k: l for l, k in zip(losses, ["loss_value", "loss_policy"])})
-        wandb.log(log)
+        # wandb.log(log)
         # log stats
         if self.num_updates_done % self.config.LOG_INTERVAL == 0:
             logger.info(

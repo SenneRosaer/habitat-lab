@@ -253,6 +253,8 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
                             print(i)
                             print(j)
                             print('-------')
+                            print(info)
+
                             top_down_map[i][j] = np.array([255,127,80])
             frame = np.concatenate((egocentric_view, top_down_map), axis=1)
     if 'roompoints' in info:

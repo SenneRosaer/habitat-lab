@@ -322,7 +322,7 @@ class RoomGoalSensor(Sensor):
         **kwargs: Any,
     ):
 
-        return np.array([episode.goals[0].semantic_id + 1], dtype=np.int64)
+        return np.array([episode.goals[0].semantic_id], dtype=np.int64)
 
 @registry.register_sensor(name="PointGoalWithGPSCompassSensor")
 class IntegratedPointGoalGPSAndCompassSensor(PointGoalSensor):

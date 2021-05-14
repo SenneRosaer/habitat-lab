@@ -209,8 +209,12 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
 
 
     if 'room' in info:
-        lo = [-8.416683, -4.635123, -11.14608]
-        hi = [55.16621, 6.341098, 12.464998]
+        if info['scene'] == 7:
+            lo = [-8.416683, -4.635123, -11.14608]
+            hi = [55.16621, 6.341098, 12.464998]
+        else:
+            lo = [-29.218403, -1.854079, -11.744533]
+            hi = [34.50847, 9.30966, 11.977054]
         grid = (
             abs(hi[2] - lo[2]) / len(top_down_map),
             abs(hi[0] - lo[0]) / len(top_down_map[0]),
@@ -248,8 +252,13 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
                             top_down_map[i][j] = np.array([255,127,80])
             frame = np.concatenate((egocentric_view, top_down_map), axis=1)
     if 'roompoints' in info:
-        lo = [-8.416683, -4.635123, -11.14608]
-        hi = [55.16621, 6.341098, 12.464998]
+        if info['scene'] == 7:
+            lo = [-8.416683, -4.635123, -11.14608]
+            hi = [55.16621, 6.341098, 12.464998]
+        else:
+            lo = [-29.218403, -1.854079, -11.744533]
+            hi = [34.50847, 9.30966, 11.977054]
+
         grid = (
             abs(hi[2] - lo[2]) / len(top_down_map),
             abs(hi[0] - lo[0]) / len(top_down_map[0]),

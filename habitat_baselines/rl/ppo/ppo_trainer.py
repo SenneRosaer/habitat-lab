@@ -161,10 +161,10 @@ class PPOTrainer(BaseRLTrainer):
                     for k, v in pretrained_state["state_dict"].items()
                     if k.startswith(prefix)
                 }
-            new_dict["running_mean_and_var._mean"] = self.actor_critic.net.visual_encoder.running_mean_and_var._mean
-            new_dict["running_mean_and_var._var"] = self.actor_critic.net.visual_encoder.running_mean_and_var._var
-            new_dict["running_mean_and_var._count"] = self.actor_critic.net.visual_encoder.running_mean_and_var._count
-            new_dict["backbone.conv1.0.weight"] = torch.zeros(32,4,7,7)
+            # new_dict["running_mean_and_var._mean"] = self.actor_critic.net.visual_encoder.running_mean_and_var._mean
+            # new_dict["running_mean_and_var._var"] = self.actor_critic.net.visual_encoder.running_mean_and_var._var
+            # new_dict["running_mean_and_var._count"] = self.actor_critic.net.visual_encoder.running_mean_and_var._count
+            # new_dict["backbone.conv1.0.weight"] = torch.zeros(32,4,7,7)
 
             self.actor_critic.net.visual_encoder.load_state_dict(
                 new_dict
@@ -642,7 +642,7 @@ class PPOTrainer(BaseRLTrainer):
         log = {"reward": deltas["reward"] / deltas["count"], 'update':self.num_updates_done, 'frames': self.num_steps_done, "fps": self.num_steps_done/((time.time()-self.t_start)+prev_time)}
         log.update(metrics)
         log.update({k: l for l, k in zip(losses, ["loss_value", "loss_policy"])})
-        # wandb.log(log)
+        wandb.log(log)
         # log stats
         if self.num_updates_done % self.config.LOG_INTERVAL == 0:
             logger.info(

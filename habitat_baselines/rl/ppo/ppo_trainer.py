@@ -1049,6 +1049,7 @@ class PPOTrainer(BaseRLTrainer):
                     #     {k: v[i] for k, v in batch.items()}, infos[i]
                     # )
                     # TODO move normalization / channel changing out of the policy and undo it here
+                    print(current_episodes[i].goals[0].semantic_id)
                     if 'POINTGOAL_WITH_GPS_COMPASS_SENSOR' in self.config.TASK_CONFIG.TASK.SENSORS:
                         infos[i]['point'] = current_episodes[i].goals[0].position
                     if 'roomnavmetricpoint' in infos[i]:

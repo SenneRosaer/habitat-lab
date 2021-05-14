@@ -1039,7 +1039,7 @@ class PPOTrainer(BaseRLTrainer):
 
                         traj_name = f"episode={current_episodes[i].episode_id}-ckpt={checkpoint_index}-.txt"
                         with open(self.config.VIDEO_DIR+ "/" + traj_name, "w") as f:
-                            f.write(json.dumps({"traj":trajectory[i], "goal": current_episodes[i].goals[0]}))
+                            f.write(json.dumps({"traj":trajectory[i], "goal": current_episodes[i].goals[0].semantic_id}))
 
                         rgb_frames[i] = []
                         trajectory[i] = []
@@ -1058,6 +1058,10 @@ class PPOTrainer(BaseRLTrainer):
                     if 'roomnavmetric' in infos[i] or 'roomnavmetricpoint' in infos[i]:
                         infos[i]['room'] = current_episodes[i].goals[
                             0].rooms_bounds
+                    if 'beacon-6' in current_episodes[i].scene_id:
+                        infos[i]['scene'] = 6
+                    else:
+                        infos[i]['scene'] = 7
 
                     frame = observations_to_image(
                         {k: v[i] for k, v in batch.items()}, infos[i]

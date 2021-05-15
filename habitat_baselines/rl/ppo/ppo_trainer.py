@@ -949,10 +949,10 @@ class PPOTrainer(BaseRLTrainer):
         self.actor_critic.eval()
         while (
             len(stats_episodes) < number_of_eval_episodes
-
+            and self.envs.num_envs > 0
         ):
             current_episodes = self.envs.current_episodes()
-
+            print(self.envs.num_envs)
             with torch.no_grad():
                 (
                     _,

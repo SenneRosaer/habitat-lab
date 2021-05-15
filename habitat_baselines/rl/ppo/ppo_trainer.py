@@ -1101,7 +1101,8 @@ class PPOTrainer(BaseRLTrainer):
                 rgb_frames,
                 trajectory
             )
-
+        print(len(stats_episodes))
+        print(self.envs.num_envs > 0)
         num_episodes = len(stats_episodes)
         aggregated_stats = {}
         for stat_key in next(iter(stats_episodes.values())).keys():

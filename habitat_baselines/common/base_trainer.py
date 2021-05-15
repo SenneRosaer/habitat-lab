@@ -132,7 +132,7 @@ class BaseTrainer:
                         writer=writer,
                         checkpoint_index=prev_ckpt_ind,
                     )
-                    print("???")
+
     def _eval_checkpoint(
         self,
         checkpoint_path: str,

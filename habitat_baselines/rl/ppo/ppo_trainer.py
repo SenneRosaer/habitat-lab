@@ -1025,6 +1025,23 @@ class PPOTrainer(BaseRLTrainer):
                         )
                     ] = episode_stats
 
+
+                    metric_strs = []
+                    for k, v in self._extract_scalars_from_info(
+                        infos[i]).items():
+                        metric_strs.append(f"{k}={v:.2f}")
+
+                    traj_name = f"episode={current_episodes[i].episode_id}-ckpt={checkpoint_index}-" + "-".join(
+                        metric_strs
+                    )
+                    with open(self.config.VIDEO_DIR + "/" + traj_name,
+                              "w") as f:
+                        f.write(json.dumps({"traj": trajectory[i],
+                                            "goal": current_episodes[i].goals[
+                                                0].semantic_id}))
+
+
+
                     if len(self.config.VIDEO_OPTION) > 0:
                         generate_video(
                             video_option=self.config.VIDEO_OPTION,
@@ -1036,12 +1053,9 @@ class PPOTrainer(BaseRLTrainer):
                             tb_writer=writer,
                         )
 
-                        traj_name = f"episode={current_episodes[i].episode_id}-ckpt={checkpoint_index}-.txt"
-                        with open(self.config.VIDEO_DIR+ "/" + traj_name, "w") as f:
-                            f.write(json.dumps({"traj":trajectory[i], "goal": current_episodes[i].goals[0].semantic_id}))
 
                         rgb_frames[i] = []
-                        trajectory[i] = []
+                    trajectory[i] = []
 
                 # episode continues
                 elif len(self.config.VIDEO_OPTION) > 0:
@@ -1049,7 +1063,6 @@ class PPOTrainer(BaseRLTrainer):
                     #     {k: v[i] for k, v in batch.items()}, infos[i]
                     # )
                     # TODO move normalization / channel changing out of the policy and undo it here
-                    print(current_episodes[i].goals[0].semantic_id)
                     if 'POINTGOAL_WITH_GPS_COMPASS_SENSOR' in self.config.TASK_CONFIG.TASK.SENSORS:
                         infos[i]['point'] = current_episodes[i].goals[0].position
                     if 'roomnavmetricpoint' in infos[i]:

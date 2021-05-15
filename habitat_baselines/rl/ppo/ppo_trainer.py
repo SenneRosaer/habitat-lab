@@ -952,7 +952,7 @@ class PPOTrainer(BaseRLTrainer):
             and self.envs.num_envs > 0
         ):
             current_episodes = self.envs.current_episodes()
-            print("1: " + self.envs.num_envs)
+            print("1: " + int(self.envs.num_envs))
             with torch.no_grad():
                 (
                     _,
@@ -968,7 +968,7 @@ class PPOTrainer(BaseRLTrainer):
                 )
 
                 prev_actions.copy_(actions)  # type: ignore
-            print("2: " + self.envs.num_envs)
+            print("2: " + int(self.envs.num_envs))
 
             # NB: Move actions to CPU.  If CUDA tensors are
             # sent in to env.step(), that will create CUDA contexts
@@ -994,7 +994,7 @@ class PPOTrainer(BaseRLTrainer):
                 dtype=torch.bool,
                 device="cpu",
             )
-            print("3: " + self.envs.num_envs)
+            print("3: " + int(self.envs.num_envs))
 
             rewards = torch.tensor(
                 rewards_l, dtype=torch.float, device="cpu"
@@ -1083,7 +1083,7 @@ class PPOTrainer(BaseRLTrainer):
                     rgb_frames[i].append(frame)
                     trajectory[i].append(infos[i]["top_down_map"]['agent_map_coord'])
 
-            print("4: " + self.envs.num_envs)
+            print("4: " + int(self.envs.num_envs))
             not_done_masks = not_done_masks.to(device=self.device)
             (
                 self.envs,
@@ -1105,7 +1105,7 @@ class PPOTrainer(BaseRLTrainer):
                 rgb_frames,
                 trajectory
             )
-            print("5: " + self.envs.num_envs)
+            print("5: " + int(self.envs.num_envs))
 
         print(len(stats_episodes))
         print(self.envs.num_envs > 0)

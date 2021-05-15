@@ -929,8 +929,8 @@ class PPOTrainer(BaseRLTrainer):
         trajectory = [
             [] for _ in range(self.config.NUM_ENVIRONMENTS)
         ]
-        if len(self.config.VIDEO_OPTION) > 0:
-            os.makedirs(self.config.VIDEO_DIR, exist_ok=True)
+
+        os.makedirs(self.config.VIDEO_DIR, exist_ok=True)
 
         number_of_eval_episodes = self.config.TEST_EPISODE_COUNT
         if number_of_eval_episodes == -1:

@@ -1034,8 +1034,7 @@ class PPOTrainer(BaseRLTrainer):
                     traj_name = f"episode={current_episodes[i].episode_id}-ckpt={checkpoint_index}-" + "-".join(
                         metric_strs
                     )
-                    with open(self.config.VIDEO_DIR + "/" + traj_name,
-                              "w") as f:
+                    with open(self.config.VIDEO_DIR + "/" + traj_name + ".txt", "w") as f:
                         f.write(json.dumps({"traj": trajectory[i],
                                             "goal": current_episodes[i].goals[
                                                 0].semantic_id}))

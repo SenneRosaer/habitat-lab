@@ -880,6 +880,10 @@ class PPOTrainer(BaseRLTrainer):
             config.TASK_CONFIG.TASK.MEASUREMENTS.append("TOP_DOWN_MAP")
             config.TASK_CONFIG.TASK.MEASUREMENTS.append("COLLISIONS")
             config.freeze()
+        else:
+            config.defrost()
+            config.TASK_CONFIG.TASK.MEASUREMENTS.append("TOP_DOWN_MAP")
+            config.freeze()
 
         if config.VERBOSE:
             logger.info(f"env config: {config}")
@@ -952,7 +956,6 @@ class PPOTrainer(BaseRLTrainer):
             and self.envs.num_envs > 0
         ):
             current_episodes = self.envs.current_episodes()
-            print("1: " + str(self.envs.num_envs))
             with torch.no_grad():
                 (
                     _,
@@ -968,7 +971,6 @@ class PPOTrainer(BaseRLTrainer):
                 )
 
                 prev_actions.copy_(actions)  # type: ignore
-            print("2: " + str(self.envs.num_envs))
 
             # NB: Move actions to CPU.  If CUDA tensors are
             # sent in to env.step(), that will create CUDA contexts
@@ -994,7 +996,6 @@ class PPOTrainer(BaseRLTrainer):
                 dtype=torch.bool,
                 device="cpu",
             )
-            print("3: " + str(self.envs.num_envs))
 
             rewards = torch.tensor(
                 rewards_l, dtype=torch.float, device="cpu"
@@ -1081,9 +1082,8 @@ class PPOTrainer(BaseRLTrainer):
                         {k: v[i] for k, v in batch.items()}, infos[i]
                     )
                     rgb_frames[i].append(frame)
-                    trajectory[i].append(infos[i]["top_down_map"]['agent_map_coord'])
+                trajectory[i].append(infos[i]["top_down_map"]['agent_map_coord'])
 
-            print("4: " + str(self.envs.num_envs))
             not_done_masks = not_done_masks.to(device=self.device)
             (
                 self.envs,
@@ -1105,10 +1105,7 @@ class PPOTrainer(BaseRLTrainer):
                 rgb_frames,
                 trajectory
             )
-            print("5: " + str(self.envs.num_envs))
 
-        print(len(stats_episodes))
-        print(self.envs.num_envs > 0)
         num_episodes = len(stats_episodes)
         aggregated_stats = {}
         for stat_key in next(iter(stats_episodes.values())).keys():

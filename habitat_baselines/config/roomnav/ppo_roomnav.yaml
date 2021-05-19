@@ -6,7 +6,7 @@ ENV_NAME: "RoomNavRLEnv"
 SIMULATOR_GPU_ID: 0
 TORCH_GPU_ID: 0
 # Can be uncommented to generate videos.
-VIDEO_OPTION: []
+VIDEO_OPTION: ["disk"]
 TENSORBOARD_DIR: "tb"
 VIDEO_DIR: "video_dir"
 # Evaluate on all episodes

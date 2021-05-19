@@ -11,6 +11,7 @@ import time
 from collections import defaultdict, deque
 from typing import Any, Dict, List, Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import tqdm
@@ -951,6 +952,7 @@ class PPOTrainer(BaseRLTrainer):
 
         pbar = tqdm.tqdm(total=number_of_eval_episodes)
         self.actor_critic.eval()
+        #self._init_train()
         while (
             len(stats_episodes) < number_of_eval_episodes
             and self.envs.num_envs > 0
@@ -996,6 +998,19 @@ class PPOTrainer(BaseRLTrainer):
                 dtype=torch.bool,
                 device="cpu",
             )
+            new_depth = batch['rgb'].clone().detach()
+            batch['rgb'].requires_grad = True
+            value, action_log_probs, dist_entropy, _ = self.agent._evaluate_actions(
+                batch,
+                test_recurrent_hidden_states,
+                prev_actions,
+                not_done_masks,
+                actions,
+            )
+            # Backprop on things
+            (value.mean() + action_log_probs.mean() + dist_entropy.mean()).backward()
+            slc, _ = torch.max(torch.abs(batch['rgb'].grad),dim=0)
+            slc = (slc - slc.min())/(slc.max()-slc.min())
 
             rewards = torch.tensor(
                 rewards_l, dtype=torch.float, device="cpu"
@@ -1078,8 +1093,12 @@ class PPOTrainer(BaseRLTrainer):
                     else:
                         infos[i]['scene'] = 7
 
+                    infos[i]['sal'] = slc
+                    n_dict = {k: v[i] for k, v in batch.items()}
+
+                    n_dict['depth'] = new_depth
                     frame = observations_to_image(
-                        {k: v[i] for k, v in batch.items()}, infos[i]
+                        n_dict, infos[i]
                     )
                     rgb_frames[i].append(frame)
                 trajectory[i].append(infos[i]["top_down_map"]['agent_map_coord'])

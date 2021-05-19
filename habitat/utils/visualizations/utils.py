@@ -18,7 +18,7 @@ from habitat.utils.visualizations import maps
 import math
 from shapely.geometry import Polygon
 cv2 = try_cv2_import()
-
+import matplotlib.pyplot as plt
 
 def paste_overlapping_image(
     background: np.ndarray,
@@ -169,7 +169,12 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
         rgb = observation["rgb"]
         if not isinstance(rgb, np.ndarray):
             rgb = rgb.cpu().numpy()
-
+        tmp = info['sal'].detach().numpy()
+        tmp.shape = (256, 256)
+        t = plt.cm.hot(tmp)
+        out = np.array([np.delete(t[i], np.s_[3:], 1) for i in range(len(t))])
+        out = out * 255
+        egocentric_view_l.append(out)
         egocentric_view_l.append(rgb)
 
     # draw depth map if observation has depth info

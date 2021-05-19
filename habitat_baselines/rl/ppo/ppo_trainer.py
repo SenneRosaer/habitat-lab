@@ -998,9 +998,8 @@ class PPOTrainer(BaseRLTrainer):
                 dtype=torch.bool,
                 device="cpu",
             )
-            new_depth = batch['rgb'].clone().detach()
-            print(batch['rgb'])
-            batch['rgb'].requires_grad = True
+            new_depth = batch['depth'].clone().detach()
+            batch['depth'].requires_grad = True
             value, action_log_probs, dist_entropy, _ = self.agent._evaluate_actions(
                 batch,
                 test_recurrent_hidden_states,
@@ -1010,7 +1009,7 @@ class PPOTrainer(BaseRLTrainer):
             )
             # Backprop on things
             (value.mean() + action_log_probs.mean() + dist_entropy.mean()).backward()
-            slc, _ = torch.max(torch.abs(batch['rgb'].grad),dim=0)
+            slc, _ = torch.max(torch.abs(batch['depth'].grad),dim=0)
             slc = (slc - slc.min())/(slc.max()-slc.min())
 
             rewards = torch.tensor(

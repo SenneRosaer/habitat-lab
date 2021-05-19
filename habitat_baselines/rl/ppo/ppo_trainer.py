@@ -1000,8 +1000,14 @@ class PPOTrainer(BaseRLTrainer):
             )
             new_depth = batch['depth'].clone().detach()
             batch['depth'].requires_grad = True
+            batch['depth'].to(device="cpu")
+            batch['rgb'].to(device="cpu")
+            batch['roomgoal'].to(device="cpu")
+            batch['gps'].to(device="cpu")
+            batch['compass'].to(device="cpu")
+
             value, action_log_probs, dist_entropy, _ = self.agent._evaluate_actions(
-                batch.to(device="cpu"),
+                batch,
                 test_recurrent_hidden_states.to(device="cpu"),
                 prev_actions.to(device="cpu"),
                 not_done_masks.to(device="cpu"),

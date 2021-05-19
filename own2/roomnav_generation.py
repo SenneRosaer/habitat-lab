@@ -94,7 +94,7 @@ def generate_roomnav_episode(
                 source_position = sim.sample_navigable_point()
                 semantics = ["storage", "meeting room", "office space", "office", "elevators", "toilet", "stairs", "hallway"]
                 #semantic_id = np.random.randint(len(semantics))
-                semantic_id = 1
+                semantic_id = 5
                 rooms = []
                 for room in annotation_json["regions"]:
                     if room["semantics"] == semantics[semantic_id]:

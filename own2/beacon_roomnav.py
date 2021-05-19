@@ -20,8 +20,8 @@ parser.add_argument('--max-distance', default=30, type=int, help='Maximum shorte
 parser.add_argument('--max-steps', default=500, type=int, help='Maximum number of episode steps.')
 
 # Dataset split. Default values are based on the MP3D PointNav dataset in Habitat.
-parser.add_argument('--train-episodes', default=10000, type=int, help='Number of training episodes per scene.')
-parser.add_argument('--valid-episodes', default=250, type=int, help='Number of validation episodes per scene.')
+parser.add_argument('--train-episodes', default=50, type=int, help='Number of training episodes per scene.')
+parser.add_argument('--valid-episodes', default=1000, type=int, help='Number of validation episodes per scene.')
 parser.add_argument('--test-episodes', default=56, type=int, help='Number of testing episodes per scene.')
 
 # Output folder.
@@ -42,7 +42,7 @@ path.mkdir(parents=True, exist_ok=False)
 scenes_path = Path(args.scene_dataset)
 
 splits = [('train', args.train_episodes), ('val', args.valid_episodes), ('test', args.test_episodes)]
-scenes = ['beacon-6', 'beacon-7']
+scenes = ['beacon-6']
 
 max_steps = args.max_steps
 max_distance = args.max_distance

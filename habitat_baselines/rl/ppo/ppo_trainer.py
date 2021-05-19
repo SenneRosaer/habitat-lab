@@ -999,6 +999,7 @@ class PPOTrainer(BaseRLTrainer):
                 device="cpu",
             )
             new_depth = batch['rgb'].clone().detach()
+            print(batch['rgb'])
             batch['rgb'].requires_grad = True
             value, action_log_probs, dist_entropy, _ = self.agent._evaluate_actions(
                 batch,

@@ -271,7 +271,7 @@ def semantic_colors():
         plt.show()
 
 if __name__ == '__main__':
-    base = 'video_dir/beacon-6-office/videos/'
+    base = 'video_dir/beacon-6-toilet/videos/'
 
     files = os.listdir(base)
 

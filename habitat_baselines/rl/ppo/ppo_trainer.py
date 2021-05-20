@@ -1009,7 +1009,7 @@ class PPOTrainer(BaseRLTrainer):
             value, action_log_probs, dist_entropy, _ = self.agent._evaluate_actions(
                 batch,
                 test_recurrent_hidden_states,
-                prev_actions.to(device='cpu'),
+                prev_actions,
                 not_done_masks,
                 actions,
             )

@@ -1010,7 +1010,7 @@ class PPOTrainer(BaseRLTrainer):
                 batch,
                 test_recurrent_hidden_states,
                 prev_actions,
-                not_done_masks,
+                not_done_masks.to(device="cuda:0"),
                 actions,
             )
             # Backprop on things

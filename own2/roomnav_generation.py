@@ -95,6 +95,9 @@ def generate_roomnav_episode(
                 semantics = ["storage", "meeting room", "office space", "office", "elevators", "toilet", "stairs", "hallway"]
                 #semantic_id = np.random.randint(len(semantics))
                 semantic_id = 5
+                # semantics = ["storage", "meeting room", "office space",
+                #              "office", "café", "elevators", "server", "toilet",
+                #              "stairs", "hallway"]
                 rooms = []
                 for room in annotation_json["regions"]:
                     if room["semantics"] == semantics[semantic_id]:

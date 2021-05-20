@@ -1005,7 +1005,7 @@ class PPOTrainer(BaseRLTrainer):
             # batch['roomgoal'].to(device="cuda:0")
             # batch['gps'].to(device="cuda:0")
             # batch['compass'].to(device="cuda:0")
-
+            print(batch['depth'])
             value, action_log_probs, dist_entropy, _ = self.agent._evaluate_actions(
                 batch,
                 test_recurrent_hidden_states,
@@ -1017,7 +1017,8 @@ class PPOTrainer(BaseRLTrainer):
             (value.mean() + action_log_probs.mean() + dist_entropy.mean()).backward()
             slc, _ = torch.max(torch.abs(batch['depth'].grad),dim=0)
             slc = (slc - slc.min())/(slc.max()-slc.min())
-
+            print(batch['depth'])
+            print("--------------------------------------")
             rewards = torch.tensor(
                 rewards_l, dtype=torch.float, device="cpu"
             ).unsqueeze(1)
@@ -1099,10 +1100,11 @@ class PPOTrainer(BaseRLTrainer):
                     else:
                         infos[i]['scene'] = 7
 
-                    infos[i]['sal'] = slc
                     n_dict = {k: v[i] for k, v in batch.items()}
 
                     n_dict['depth'] = new_depth
+                    n_dict['sal'] = slc
+
                     frame = observations_to_image(
                         n_dict, infos[i]
                     )

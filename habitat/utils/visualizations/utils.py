@@ -169,7 +169,7 @@ def observations_to_image(observation: Dict, info: Dict) -> np.ndarray:
         rgb = observation["rgb"]
         if not isinstance(rgb, np.ndarray):
             rgb = rgb.cpu().numpy()
-        tmp = info['sal'].detach().numpy()
+        tmp = observation['sal'].detach().numpy()
         tmp.shape = (256, 256)
         t = plt.cm.hot(tmp)
         out = np.array([np.delete(t[i], np.s_[3:], 1) for i in range(len(t))])

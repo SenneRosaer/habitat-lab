@@ -161,10 +161,10 @@ class PPOTrainer(BaseRLTrainer):
                     for k, v in pretrained_state["state_dict"].items()
                     if k.startswith(prefix)
                 }
-            # new_dict["running_mean_and_var._mean"] = self.actor_critic.net.visual_encoder.running_mean_and_var._mean
-            # new_dict["running_mean_and_var._var"] = self.actor_critic.net.visual_encoder.running_mean_and_var._var
-            # new_dict["running_mean_and_var._count"] = self.actor_critic.net.visual_encoder.running_mean_and_var._count
-            # new_dict["backbone.conv1.0.weight"] = torch.zeros(32,4,7,7)
+            new_dict["running_mean_and_var._mean"] = self.actor_critic.net.visual_encoder.running_mean_and_var._mean
+            new_dict["running_mean_and_var._var"] = self.actor_critic.net.visual_encoder.running_mean_and_var._var
+            new_dict["running_mean_and_var._count"] = self.actor_critic.net.visual_encoder.running_mean_and_var._count
+            new_dict["backbone.conv1.0.weight"] = torch.zeros(32,4,7,7)
 
             self.actor_critic.net.visual_encoder.load_state_dict(
                 new_dict

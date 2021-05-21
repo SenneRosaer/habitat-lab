@@ -11,7 +11,7 @@ ISLAND_RADIUS_LIMIT = 1.5
 
 
 parser = argparse.ArgumentParser(description='Create room goal navigation task dataset for The Beacon 3D scan data.')
-parser.add_argument('--room_annotation', default='own2/annotation_complete.json',help="Json file with room annotations")
+parser.add_argument('--room_annotation', default='own2/annotation_complete_fixed.json',help="Json file with room annotations")
 # Scene dataset path.
 parser.add_argument('--scene_dataset',default='data/scene_datasets/beacon' ,help='Scene dataset path containing the *.glb files.')
 
@@ -20,7 +20,7 @@ parser.add_argument('--max-distance', default=30, type=int, help='Maximum shorte
 parser.add_argument('--max-steps', default=500, type=int, help='Maximum number of episode steps.')
 
 # Dataset split. Default values are based on the MP3D PointNav dataset in Habitat.
-parser.add_argument('--train-episodes', default=50, type=int, help='Number of training episodes per scene.')
+parser.add_argument('--train-episodes', default=20000, type=int, help='Number of training episodes per scene.')
 parser.add_argument('--valid-episodes', default=1000, type=int, help='Number of validation episodes per scene.')
 parser.add_argument('--test-episodes', default=56, type=int, help='Number of testing episodes per scene.')
 
@@ -42,7 +42,7 @@ path.mkdir(parents=True, exist_ok=False)
 scenes_path = Path(args.scene_dataset)
 
 splits = [('train', args.train_episodes), ('val', args.valid_episodes), ('test', args.test_episodes)]
-scenes = ['beacon-6']
+scenes = ['beacon-7']
 
 max_steps = args.max_steps
 max_distance = args.max_distance

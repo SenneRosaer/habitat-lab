@@ -92,9 +92,9 @@ def generate_roomnav_episode(
     while episode_count < num_episodes or num_episodes < 0:
                 print(episode_count)
                 source_position = sim.sample_navigable_point()
-                semantics = ["storage", "meeting room", "office space", "office", "elevators", "toilet", "stairs", "hallway"]
-                #semantic_id = np.random.randint(len(semantics))
-                semantic_id = 5
+                semantics = ["storage", "meeting room", "office space", "office", "elevators", "toilet", "stairs", "hallway", "server", "lab", "café"]
+                semantic_id = np.random.randint(len(semantics))
+                #semantic_id = 5
                 # semantics = ["storage", "meeting room", "office space",
                 #              "office", "café", "elevators", "server", "toilet",
                 #              "stairs", "hallway"]

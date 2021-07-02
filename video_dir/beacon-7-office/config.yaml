@@ -1,0 +1,78 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.10.30
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.6.13
+    t:
+      1:
+      - 1
+      2:
+      - 1
+      - 3
+      3:
+      - 3
+      4: 3.6.13
+      5: 0.10.30
+      8:
+      - 5
+gpulab:
+  desc: null
+  value:
+    GPULAB_CLUSTER_ID: '7'
+    GPULAB_CPUS_RESERVED: 25,73,43,91
+    GPULAB_GPUS_RESERVED: '7'
+    GPULAB_JOB_ID: 32789faf-cdb1-42df-9f9e-e67880d2367b
+    GPULAB_MEM_RESERVED: ''
+    GPULAB_PROJECT: ''
+    GPULAB_SLAVE_DNSNAME: dgx2.idlab.uantwerpen.be
+    GPULAB_SLAVE_HOSTNAME: slave7A
+    GPULAB_SLAVE_INSTANCE_ID: inst-14
+    GPULAB_SLAVE_PID: '65967'
+    GPULAB_USERNAME: ''
+    GPULAB_VERSION: ''
+    GPULAB_WORKER_ID: '0'
+num_processes:
+  desc: null
+  value: -1
+num_updates:
+  desc: null
+  value: 25000
+rl:
+  desc: null
+  value:
+    ddppo:
+      backbone: resnet50
+      num_recurrent_layers: 2
+      pretrained: false
+      pretrained_encoder: false
+      pretrained_weights: data/ddppo-models/gibson-2plus-resnet50.pth
+      reset_critic: true
+      rnn_type: LSTM
+      sync_frac: 0.6
+      train_encoder: true
+    ppo:
+      clip_param: 0.2
+      entropy_coef: 0.01
+      eps: 1.0e-05
+      gamma: 0.99
+      hidden_size: 512
+      lr: 0.00025
+      max_grad_norm: 0.2
+      num_mini_batch: 1
+      num_steps: 128
+      ppo_epoch: 2
+      tau: 0.95
+      use_gae: true
+      use_linear_clip_decay: false
+      use_linear_lr_decay: false
+      use_normalized_advantage: false
+      value_loss_coef: 0.5
+    reward_measure: distance_to_goal
+    slack_reward: -0.01
+    success_measure: spl
+    success_reward: 2.5

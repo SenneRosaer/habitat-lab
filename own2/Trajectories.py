@@ -21,62 +21,19 @@ IMAGE_DIR = os.path.join("examples", "images")
 if not os.path.exists(IMAGE_DIR):
     os.makedirs(IMAGE_DIR)
 
-def full_trajectory(base):
-    matrix = np.zeros((1024, 2757, 3), dtype="uint8")
-    for i in range(len(matrix)):
-        for j in range(len(matrix[0])):
-            matrix[i, j, 0] = 255
-            matrix[i, j, 1] = 255
-            matrix[i, j, 2] = 255
-    data = None
-    files = os.listdir(base)
 
-    for file in files:
-        if file[-4:] == ".txt":
-            data = None
 
-            with open(base + file, "r") as f:
-                data = json.load(f)
-                for loc in data['traj']:
-                    if matrix[loc[0], loc[1], 1] == 255:
-                        for i in range(loc[0] - 10, loc[0] + 10):
-                            for j in range(loc[1] - 10, loc[1] + 10):
-                                if i > 0 and i < 1024 and j > 0 and j < 2757:
-                                    matrix[i, j, 0] = 120
-                                    matrix[i, j, 1] = 0
-                                    matrix[i, j, 2] = 0
-
-                    else:
-                        if matrix[loc[0], loc[1], 1] < 255:
-                            for i in range(loc[0] - 5, loc[0] + 5):
-                                for j in range(loc[1] - 5, loc[1] + 5):
-                                    if i > 0 and i < 1024 and j > 0 and j < 2757:
-                                        matrix[i, j, 0] = matrix[i, j, 0] + 10
-    image = Image.fromarray(matrix, "RGB")
-    image.show()
-
-def start_positions(info):
-    matrix = example_get_topdown_map()
-
-    for key in info:
-        data = info[key]['content']
-        points = [data['traj'][0]]
-        for loc in points:
-            for i in range(loc[0] - 5, loc[0] + 5):
-                for j in range(loc[1] - 5, loc[1] + 5):
-                    if i > 0 and i < 1024 and j > 0 and j < 2757:
-                        if info[key]['roomsuccess'] == '0.00':
-                            matrix[i, j, 0] = 200
-                            matrix[i, j, 1] = 0
-                            matrix[i, j, 2] = 0
-                        else:
-                            matrix[i, j, 0] = 0
-                            matrix[i, j, 1] = 200
-                            matrix[i, j, 2] = 0
-    image = Image.fromarray(matrix, "RGB")
-    image.show()
 
 def end_positions(info, name):
+    '''
+    Plot all the end positions on an image of the floor
+    Args:
+        info: The trajectories that will be taken into account
+        name: Name of the output image
+
+    Returns:
+
+    '''
     matrix = example_get_topdown_map()
 
     for key in info:
@@ -98,9 +55,18 @@ def end_positions(info, name):
 
 
 def end_positions_color(info, name):
-    #matrix = example_get_topdown_map()
+    '''
+        Plot all the end positions on a colored image of the floor
+        Args:
+            info: The trajectories that will be taken into account
+            name: Name of the output image
 
-    image_name = 'own2/colorplan_001.jpg'
+        Returns:
+
+        '''
+
+    #image on which positions are added
+    image_name = 'own2/floor7.jpg'
     matrix = image.imread(image_name)
     tmp_matrix = np.zeros((len(matrix),len(matrix[0]), 3), dtype="uint8")
     for i in range(len(matrix)):
@@ -114,75 +80,35 @@ def end_positions_color(info, name):
     x_mul = len(matrix[0]) / 2757
     for key in info:
         data = info[key]['content']
-        points = [data['traj'][-1]]
-        for loc in points:
-            n_loc = [int(loc[0]*x_mul), int(loc[1]*y_mul)]
-            for i in range(n_loc[0] - 20, n_loc[0] + 20):
-                for j in range(n_loc[1] - 20, n_loc[1] + 20):
-                    if i > 0 and i < len(matrix) and j > 0 and j < len(matrix[0]):
-                        if info[key]['roomsuccess'] == '0.00':
-                            matrix[i,j, 0] = 200
-                            matrix[i,j, 1] = 0
-                            matrix[i,j, 2] = 0
-                        else:
-                            matrix[i,j, 0] = 0
-                            matrix[i,j, 1] = 200
-                            matrix[i,j, 2] = 0
+        if data['goal'] == 1:
+            points = [data['traj'][-1]]
+            for loc in points:
+                n_loc = [int(loc[0]*x_mul), int(loc[1]*y_mul)]
+                for i in range(n_loc[0] - 20, n_loc[0] + 20):
+                    for j in range(n_loc[1] - 20, n_loc[1] + 20):
+                        if i > 0 and i < len(matrix) and j > 0 and j < len(matrix[0]):
+                            if info[key]['roomsuccess'] == '0.00' and len(points) < 490:
+                                matrix[i,j, 0] = 200
+                                matrix[i,j, 1] = 0
+                                matrix[i,j, 2] = 0
+                            elif info[key]['roomsuccess'] == '1.00':
+                                matrix[i,j, 0] = 0
+                                matrix[i,j, 1] = 200
+                                matrix[i,j, 2] = 0
 
     Image.fromarray(matrix, "RGB").save('own2/new_images/end_pos_color'+name+'.png')
 
-def both_positions(info):
-    matrix = example_get_topdown_map()
-
-    for key in info:
-        data = info[key]['content']
-        points = [data['traj'][0], data['traj'][-1]]
-        for loc in points:
-            for i in range(loc[0] - 5, loc[0] + 5):
-                for j in range(loc[1] - 5, loc[1] + 5):
-                    if i > 0 and i < 1024 and j > 0 and j < 2757:
-                        if info[key]['roomsuccess'] == '0.00':
-                            matrix[i, j, 0] = 200
-                            matrix[i, j, 1] = 0
-                            matrix[i, j, 2] = 0
-                        else:
-                            matrix[i, j, 0] = 0
-                            matrix[i, j, 1] = 200
-                            matrix[i, j, 2] = 0
-    image = Image.fromarray(matrix, "RGB")
-    image.show()
-
-def line_between_start_end(info):
-    matrix = example_get_topdown_map()
-
-    for key in info:
-        data = info[key]['content']
-        line = LineString((data['traj'][0], data['traj'][-1]))
-        distances = np.arange(0, line.length, 2)
-        points = [line.interpolate(distance) for distance in distances] + [line.boundary[1]]
-        for p in points:
-            loc = [int(p.x), int(p.y)]
-            for i in range(loc[0] - 5, loc[0] + 5):
-                for j in range(loc[1] - 5, loc[1] + 5):
-                    if i > 0 and i < 1024 and j > 0 and j < 2757:
-                        if info[key]['roomsuccess'] == '0.00':
-                            matrix[i, j, 0] = 200
-                            matrix[i, j, 1] = 0
-                            matrix[i, j, 2] = 0
-                        else:
-                            matrix[i, j, 0] = 0
-                            matrix[i, j, 1] = 200
-                            matrix[i, j, 2] = 0
-    image = Image.fromarray(matrix, "RGB")
-    image.show()
 
 def example_get_topdown_map():
+    '''
+    Generate navigatable top-down map based on the scene specified in a config file
+    Returns:
+
+    '''
     config = habitat.get_config(config_paths="configs/tasks/roomnav.yaml")
-    dataset = habitat.make_dataset(
-        id_dataset=config.DATASET.TYPE, config=config.DATASET
-    )
+
     map = None
-    with habitat.Env(config=config, dataset=dataset) as env:
+    with habitat.Env(config=config) as env:
         env.reset()
         map = maps.get_topdown_map_from_sim(
             env.sim, map_resolution=1024
@@ -194,6 +120,14 @@ def example_get_topdown_map():
     return map
 
 def success_rates(info):
+    '''
+    Based on the trajectories plot the percentage of assumed and effective success
+    Args:
+        info:
+
+    Returns:
+
+    '''
     s_f = dict()
 
     max_traj = 0
@@ -222,16 +156,24 @@ def success_rates(info):
     for key in s_f:
         print("Effective "+str(key) +": " + str(s_f[key]['success']/(s_f[key]['success']+s_f[key]['fail']+s_f[key]['fail_but_think_success'])))
         print("Agent thinks " + str(key) +": " + str((s_f[key]['success']+s_f[key]['fail_but_think_success'])/(s_f[key]['success']+s_f[key]['fail']+s_f[key]['fail_but_think_success'])))
-
+        print("Samples: " + str(s_f[key]['success']+s_f[key]['fail']+s_f[key]['fail_but_think_success']))
+        print("------------------")
 
 def semantic_colors():
-    image_name = 'own2/colorplan_cropped2.jpg'
+    '''
+    Plot RGB distributions for every type based on the annotation and a color ground plan
+    Returns:
+
+    '''
+    #Image used to obtain colors
+    image_name = 'own2/floor7.jpg'
     data = image.imread(image_name)
-    print()
-    file = open('own2/pixel_annotation.json')
+
+    #Annotation
+    file = open('own2/pixel_annotation_floor7.json')
     file_data = json.load(file)["colorplan_cropped2.jpg5267415"]
 
-    tmp = json.load(open('own2/annotation_complete.json'))
+    tmp = json.load(open('own2/annotation-7.json'))
     sem = []
     for region in tmp['regions']:
         sem.append(region['semantics'])
@@ -244,6 +186,8 @@ def semantic_colors():
             region_colors[item] = {'red': [], 'green': [], 'blue': []}
 
     for index,polygon in enumerate(file_data['regions']):
+        if index % 10 == 0:
+            print("Done " + str(index))
         attributes = polygon["shape_attributes"]
         x = attributes["all_points_x"]
         y = attributes["all_points_y"]
@@ -263,15 +207,16 @@ def semantic_colors():
 
 
     for key in region_colors:
-        sns.distplot(region_colors[key]["red"], hist=False, kde=True, label="red " + key)
-        sns.distplot(region_colors[key]["blue"], hist=False, kde=True, label="blue " + key)
-        sns.distplot(region_colors[key]["green"], hist=False, kde=True, label="green " + key)
+        sns.distplot(region_colors[key]["red"], hist=False, kde=True, label="red " + key + " floor 7", color="red")
+        sns.distplot(region_colors[key]["blue"], hist=False, kde=True, label="blue " + key + " floor 7", color="blue")
+        sns.distplot(region_colors[key]["green"], hist=False, kde=True, label="green " + key + " floor 7", color="green")
 
         plt.legend()
         plt.show()
 
 if __name__ == '__main__':
-    base = 'video_dir/beacon-6-office/videos/'
+    #Directory with files
+    base = 'video_dir/beacon-6-all-types/videos/'
 
     files = os.listdir(base)
 
@@ -287,7 +232,8 @@ if __name__ == '__main__':
             file_information[info[0] + '-' + info[1]]['content'] = data
 
     #semantic_colors()
-    name = 'office'
-    end_positions(file_information, name)
+    name = 'meeting6'
+    #
+    # success_rates(file_information)
+    # end_positions(file_information, name)
     end_positions_color(file_information, name)
-    success_rates(file_information)
